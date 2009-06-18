@@ -1,0 +1,38 @@
+Newsqueak1
+'LangexplrExperiments'
+CurlWriteCallbackNs1 = Alien (
+"Class used to represent arguments of the LibCurl write function."
+'as yet unclassified'
+data = (
+ 
+	^Alien forPointer: (self unsignedLongAt: 1)
+)
+
+
+datasize = (
+
+       ^(self unsignedLongAt: 5)
+)
+
+
+nmemb = (
+
+      ^(self unsignedLongAt: 9)
+)
+
+
+writerData = (
+ 
+        ^Alien forPointer: (self unsignedLongAt: 13)
+)
+
+
+) : (
+'as yet unclassified'
+dataSize = (
+
+    ^16
+)
+
+
+)

@@ -1,0 +1,26 @@
+Newsqueak1
+'LangexplrExperiments'
+CurlDebugCallback = Alien (
+"."
+'as yet unclassified'
+msg = (
+
+       ^Alien forPointer: (self unsignedLongAt: 9)
+)
+
+
+msgsize = (
+
+      ^ (self unsignedLongAt: 13)
+)
+
+
+) : (
+'as yet unclassified'
+dataSize = (
+
+    ^20
+)
+
+
+)

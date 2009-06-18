@@ -1,0 +1,53 @@
+Newsqueak2
+'LangexplrExperiments'
+
+class HCalendar usingLib: platform = NewspeakObject (
+"Experiment for displaying a calendar en Hopscotch."
+|
+     Subject = platform Subject.
+     Presenter = platform HPresenter.
+     Date = platform Date.
+     Month = platform Month.
+|
+)
+(
+
+class CalendarSubject = Subject (
+"Test subject"
+|
+  public theMonth = Date today month.
+  public theYear = Date today year.
+|
+)
+('as yet unclassified'
+createPresenter = (
+	^CalendarPresenter new subject: self.
+)
+
+)
+
+class CalendarPresenter = Presenter (
+" Presenter."
+|
+|
+)
+('as yet unclassified'
+definition = (
+	^column: {
+            label:: subject theMonth name, ' ' , subject theYear asString.
+            
+       }.
+)
+
+weeks = (
+	|firstDayOfMonth result t previousMonthDays nextMonthDays|
+      firstDayOfMonth:: Date year: (subject theYear) 
+                                        month: (subject theMonth name) 
+                                        day: 1.
+      previousMonthDays:: firstDayOfMonth dayOfWeek - 1.
+      nextMonthDays:: (((subject theMonth daysInMonth) + previousMonthDays)) rem: 7.
+      result:: {   }.
+      t
+)
+
+))

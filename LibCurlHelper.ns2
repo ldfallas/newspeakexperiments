@@ -1,0 +1,272 @@
+Newsqueak2
+'LangexplrExperiments'
+
+class LibCurlHelper usingLib: platform =  (
+"This class wraps an implementation of the LibCurl library"
+|
+	Transcript = platform Transcript.
+      Alien = platform Alien.
+      UnsafeAlien = platform UnsafeAlien.
+      Callback = platform Callback.
+	CurlWriteCallback = platform CurlWriteCallbackNs1.
+      CurlDebugCallback = platform CurlDebugCallback.
+      ByteString = platform ByteString.
+      OrderedCollection = platform OrderedCollection.
+
+
+      public libcurlPath = ''.
+      public errorBuffer = ''.
+	protected CURL_OPT_URL = 10002.
+	protected CURLOPT_WRITEFUNCTION = 20011.
+	protected CURLOPT_WRITEDATA = 10001.
+      protected CURLOPT_ERRORBUFFER = 10010.
+      protected CurlErrorBufferSize = 256.
+      protected CURLOPT_SSL_VERIFYPEER = 64.
+      protected CURLOPT_SSL_VERIFYHOST = 81.
+      protected CURLOPT_HTTPPOST = 10024.
+      protected CURLOPT_HEADER = 10023.
+      protected CURLOPT_DEBUGFUNCTION = 20094.
+      protected CURLOPT_VERBOSE = 41.
+
+      internalDebugCallback = nil.
+      internalWriteCallback = nil.
+      formPostData = nil.
+      private curlInstance = nil.
+      private aliensToRelease = nil.  
+
+      
+      CURLFORM_NOTHING = 0 .
+      CURLFORM_COPYNAME = 1 .
+      CURLFORM_PTRNAME = 2.
+      CURLFORM_NAMELENGTH = 3.
+      CURLFORM_COPYCONTENTS = 4.
+      CURLFORM_PTRCONTENTS = 5.
+      CURLFORM_CONTENTSLENGTH = 6.
+      CURLFORM_FILECONTENT = 7.
+      CURLFORM_ARRAY = 8.
+      CURLFORM_OBSOLETE = 9.
+      CURLFORM_FILE = 10.
+      CURLFORM_BUFFER = 11.
+      CURLFORM_BUFFERPTR = 12.
+      CURLFORM_BUFFERLENGTH = 13.
+      CURLFORM_CONTENTTYPE = 14.
+      CURLFORM_CONTENTHEADER = 15.
+      CURLFORM_FILENAME = 16.
+      CURLFORM_END = 17.
+      CURLFORM_OBSOLETE2 = 18.
+      CURLFORM_STREAM = 19.
+
+      CURLINFO_LONG = 16r200000.
+      CURLINFO_RESPONSE_CODE = CURLINFO_LONG + 2. 
+
+|
+)
+('as yet unclassified'
+addAlienToRelease: anAlien = (
+	aliensToRelease isNil ifTrue: [ aliensToRelease:: OrderedCollection new. ].
+      aliensToRelease add: anAlien.
+      ^anAlien.
+)
+
+cleanup = (
+	(Alien lookup: 'curl_easy_cleanup' inLibrary: curlLibName )
+		primFFICallResult: nil
+            withArguments: { curlInstance }	.
+
+      formPostData ifNotNil: [ freePostFormData. ]. 
+      aliensToRelease do: [:anAlien | anAlien free ].
+)
+
+private createHeaderList: strings <Array> = (
+	|headerlist tmpResult aHeaderString|
+      headerlist:: nil.
+
+      strings do: [:entry | 
+                       aHeaderString:: addAlienToRelease: (entry asAlien).
+
+			     headerlist:: (Alien lookup: 'curl_slist_append' inLibrary: curlLibName )
+                            primFFICallResult: (headerlist:: Alien new:4)
+                            withArguments: { 
+                                headerlist.
+                                 aHeaderString pointer.
+                           }.
+                          
+                   ].
+       ^headerlist.
+)
+
+curlLibName = (
+	^libcurlPath, 'libcurl.dll' 
+)
+
+debugDataToTranscript  = (
+      | r callback tmpBuffer|
+     callback:: [ :args :result |
+                      tmpBuffer::  ByteString new:  (args msgsize). 
+                      args msg copyInto: tmpBuffer 
+                                     from: 1 to: (args msgsize)
+                                     in: (args msg) startingAt: 1.
+
+                       Transcript show:'>>>>',tmpBuffer.
+                       result returnInteger: 0. 
+      ].
+      internalDebugCallback:: Callback
+                                         block: callback
+                                         argsClass: CurlDebugCallback.
+
+	(Alien lookup: 'curl_easy_setopt' inLibrary: curlLibName )
+          primFFICallResult: (r:: Alien new: 4)
+      withArguments: {  curlInstance.
+                                 CURLOPT_DEBUGFUNCTION. 
+                                 internalDebugCallback thunk. }.
+	(Alien lookup: 'curl_easy_setopt' inLibrary: curlLibName )
+          primFFICallResult: (r:: Alien new: 4)
+      withArguments: {  curlInstance.
+                                 CURLOPT_VERBOSE.
+                                 1. }.
+)
+
+ensureLibrariesLoaded = (
+	Alien ensureLoaded: libcurlPath, 'libidn-11.dll'.
+      Alien ensureLoaded: libcurlPath, 'libeay32.dll'.
+      Alien ensureLoaded: libcurlPath, 'libssl32.dll'.
+      Alien ensureLoaded: curlLibName. 
+)
+
+formPostFields: fields <Dictionary> = (
+	|tmpResult formpost lastptr keyAlien valueAlien curlFormAdd|
+      formpost:: addAlienToRelease: (Alien newC: 4).
+      lastptr:: addAlienToRelease: (Alien newC: 4).
+      curlFormAdd:: (Alien lookup: 'curl_formadd' inLibrary: curlLibName ).
+
+      fields associationsDo: [:entry | 
+                       keyAlien:: addAlienToRelease: (entry key asAlien).
+                       valueAlien:: addAlienToRelease: (entry value asAlien).
+
+			      curlFormAdd
+                            primFFICallResult: (tmpResult:: Alien new: 4)
+                            withArguments: { 
+                                formpost address.
+                                lastptr address.
+                                CURLFORM_COPYNAME.
+                                keyAlien pointer.
+                                CURLFORM_COPYCONTENTS.
+                                valueAlien pointer.
+                                CURLFORM_END.
+                           }.
+                          
+                   ].    
+
+    ^formpost.
+)
+
+freePostFormData= (
+	  (Alien lookup: 'curl_formfree' inLibrary: curlLibName )
+                            primFFICallResult: nil
+                            withArguments: { 
+                                 formPostData.
+                            }.
+)
+
+headers: headers <Array> ^ <Integer> = (
+      |result curlHeaders|
+      curlHeaders:: createHeaderList: headers.
+	(Alien lookup: 'curl_easy_setopt' inLibrary: curlLibName )
+            primFFICallResult: (result:: Alien new:4)
+        withArguments: {  curlInstance.
+                                  CURLOPT_HEADER.
+                                  curlHeaders. }.
+     ^result signedLongAt: 1.
+)
+
+initializeCurl = (
+     |curl|
+     ensureLibrariesLoaded .
+     (Alien lookup: 'curl_easy_init' inLibrary: curlLibName )
+		primFFICallResult: (curl:: Alien new: 4).  
+     curlInstance: curl.
+)
+
+noSslVerification = (
+      |result|
+	(Alien lookup: 'curl_easy_setopt' inLibrary: curlLibName )
+            primFFICallResult:  (result:: Alien new:4)
+        withArguments: {  curlInstance.
+                                   CURLOPT_SSL_VERIFYPEER.
+                                  0. }.
+	(Alien lookup: 'curl_easy_setopt' inLibrary: curlLibName )
+            primFFICallResult: (result:: Alien new:4)
+        withArguments: {  curlInstance.
+                                  CURLOPT_SSL_VERIFYHOST.
+                                  0. }.
+)
+
+performOperation = (
+   |r|
+    (Alien lookup: 'curl_easy_perform' inLibrary: curlLibName )
+          primFFICallResult: (r:: Alien new: 4)
+           withArguments: {  curlInstance. }.
+   ^r signedLongAt: 1.
+)
+
+post: aFormData = (
+      |result| 
+      formPostData:: formPostFields: aFormData.
+	(Alien lookup: 'curl_easy_setopt' inLibrary: curlLibName )
+            primFFICallResult: (result:: Alien new:4)
+            withArguments: {  curlInstance.
+                                       CURLOPT_HTTPPOST.
+                                        formPostData. }.
+      ^result signedLongAt: 1 .
+)
+
+recordErrorMessage = (
+      |result|
+      errorBuffer:: ByteString new: CurlErrorBufferSize.
+	(Alien lookup: 'curl_easy_setopt' inLibrary: curlLibName )
+          primFFICallResult: (result:: Alien new:4)
+          withArguments: {  curlInstance.
+                                     CURLOPT_ERRORBUFFER .
+                                     UnsafeAlien forPointerTo:errorBuffer. }.
+     ^result
+)
+
+responseCode = (
+     |result code|
+     code:: addAlienToRelease: (Alien newC: 4).
+    	(Alien lookup: 'curl_easy_getinfo' inLibrary: curlLibName)
+           primFFICallResult: (result:: Alien new: 4)
+           withArguments:{ 
+                  curlInstance.
+                  CURLINFO_RESPONSE_CODE. 
+                  code address 
+            }.
+      ^{result signedLongAt: 1. code signedLongAt: 1.}
+)
+
+url: url <String> = (
+    |result|
+    (Alien lookup: 'curl_easy_setopt' inLibrary: curlLibName )
+             primFFICallResult: (result:: Alien new:4)
+             withArguments: {  curlInstance.
+                                        CURL_OPT_URL.
+                                        (addAlienToRelease: (url asAlien)) pointer. }.
+    ^result.
+)
+
+writeCallback:  callback <Block>= (
+      |result|
+      internalWriteCallback:: Callback
+                                        block: callback 
+                                        argsClass: CurlWriteCallback. 
+ 
+	(Alien lookup: 'curl_easy_setopt' inLibrary: curlLibName ) 
+          primFFICallResult: (result:: Alien new: 4)
+      withArguments: {  curlInstance.
+                                 CURLOPT_WRITEFUNCTION.
+                                 internalWriteCallback thunk. }.
+
+     ^result.
+)
+
+)

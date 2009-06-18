@@ -1,0 +1,158 @@
+Newsqueak2
+'LangexplrExperiments'
+
+class HttpServiceClient usingLib: platform withCurlPath: curlLibraryPath = (
+"This class is used to access services provided by the HTTP protocol"
+|
+	LibCurlHelper = platform LibCurlHelper.
+	ByteString = platform ByteString.
+	platform = platform.
+      Transcript = platform Transcript .
+      private curlLibraryPath  = curlLibraryPath .
+|
+)
+(
+
+class HttpRequestResult curlErrorCode: curlErrorCode httpResponse: httpResponse data: data= (
+|
+     public curlErrorCode = curlErrorCode.
+     public httpResponse = httpResponse.
+     public data = data.
+
+     private CURLE_OK = 0.
+     private CURLE_UNSUPPORTED_PROTOCOL = 1.
+     private CURLE_FAILED_INIT = 2.
+     private CURLE_URL_MALFORMAT = 3.
+     private CURLE_COULDNT_RESOLVE_PROXY = 5.
+     private CURLE_COULDNT_RESOLVE_HOST  = 6.
+
+
+|
+)
+('as yet unclassified'
+success = (
+	^(curlErrorCode = 0) and: [httpResponse = 200].
+)
+
+)'as yet unclassified'
+createNewCurlInstance = (
+       | curl |
+	 curl:: (LibCurlHelper usingLib: platform).
+       curl libcurlPath: curlLibraryPath .
+       curl initializeCurl.
+      ^ curl. 
+)
+
+get: url <String> ^ <HttpRequestResult> = (
+      | curl data tmpBuffer bufferLength response|
+      ^ get: url withHeaders: {}.
+)
+
+get: url <String> withHeaders: headers <Array> ^ <HttpRequestResult> = (
+      | curl data tmpBuffer bufferLength curlCallResult response|
+      data:: ''.
+	curl:: createNewCurlInstance.  
+      curl writeCallback: 
+               [:args :result|
+                      bufferLength:: ((args datasize) * (args nmemb)).
+                      tmpBuffer:: ByteString new:  bufferLength.
+                      args data copyInto: tmpBuffer 
+                                     from: 1 to: bufferLength
+                                     in: (args data) startingAt: 1.
+                      data:: data,tmpBuffer.
+                      result returnInteger:  bufferLength.
+               ]. 
+
+      headers size > 0 ifTrue: [curl headers: headers].
+
+      (isHttpsUrl: url)  
+              ifTrue: [curl noSslVerification.].        
+      curl url: url. 
+
+      curlCallResult:: curl performOperation.
+
+      response:: curl responseCode.
+      curl cleanup.
+      ^HttpRequestResult 
+                   curlErrorCode: curlCallResult 
+                   httpResponse: response
+                   data: data.
+)
+
+private isHttpsUrl: url <String> ^ <Boolean> = (
+	^((url findString: 'https' startingAt:0 caseSensitive: false) = 1)
+)
+
+postForm: formData <Dictionary> to: url = (
+      | curl data tmpBuffer bufferLength curlFormData response curlCallResult|
+      data:: ''.
+	curl:: createNewCurlInstance. 
+
+      curl post: formData.
+      curl writeCallback: 
+               [:args :result|
+                      bufferLength:: ((args datasize) * (args nmemb)).
+                      tmpBuffer:: ByteString new:  bufferLength.
+                      args data copyInto: tmpBuffer 
+                                     from: 1 to: bufferLength
+                                     in: (args data) startingAt: 1.
+                      data:: data,tmpBuffer.
+                      result returnInteger:  bufferLength.
+               ].
+
+      (isHttpsUrl: url)  
+              ifTrue: [curl noSslVerification.].        
+         
+      curl url: url.
+      curlCallResult: curl performOperation.
+
+      response:: curl responseCode.
+      curl cleanup.
+      ^HttpRequestResult 
+                   curlErrorCode: curlCallResult 
+                   httpResponse: response
+                   data: data.
+
+
+)
+
+) : (
+'as yet unclassified'
+aPostTest: platform login: email password: passwd = (
+      | d |
+      d:: (platform Dictionary) new.
+      d add: ('accoutType' -> 'GOOGLE').
+      d add: ('Email' -> email).
+      d add: 'Passwd' -> passwd.
+      d add: 'service' -> 'analytics'.
+      d add: 'source' -> ''.
+	^((platform HttpServiceClient) usingLib:platform)  
+                  postForm: d 
+               "   to: 'http://localhost:8080/adsfad'."
+                  to: 'https://www.google.com/accounts/ClientLogin'.
+)
+
+testWithGAuth: platform login: email password: passwd= (
+	|t parts k r additionalHeader|
+      t:: (platform HttpServiceClient) aPostTest: platform login: email password: passwd.
+     
+      parts:: (t data) subStrings: '=',String crlf.
+      k:: parts at: 6.
+
+     (platform Transcript) show: k.
+      (platform Transcript) show: '---*----'.
+     additionalHeader::'Authorization: GoogleLogin auth=',k.
+     r:: (((platform HttpServiceClient) usingLib: platform)
+                      get: 'https://www.google.com/analytics/feeds/accounts/default?alt=json'
+                      withHeaders: { additionalHeader.}).
+
+     (platform Transcript) show: r.
+      (platform Transcript) show: '---*----'.
+^r data.
+)
+
+usingLib: platform = (
+	^(self  usingLib: platform withCurlPath: '').
+)
+
+)

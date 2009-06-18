@@ -1,0 +1,9 @@
+Newsqueak2
+'LangexplrExperiments'
+
+class CurlWriteCallbackNs1 = Alien (
+"Class used to represent arguments of the LibCurl write function."
+|
+|
+)
+()
