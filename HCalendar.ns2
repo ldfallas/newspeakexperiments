@@ -12,11 +12,11 @@ class HCalendar usingLib: platform = NewspeakObject (
 )
 (
 
-class CalendarSubject = Subject (
+class CalendarSubject fromDate: date = Subject (
 "Test subject"
 |
-  public theMonth = Date today month.
-  public theYear = Date today year.
+  public theMonth = date  month.
+  public theYear = date year.
 |
 )
 ('as yet unclassified'
@@ -79,15 +79,17 @@ weeks = (
                                           t:: result at: day.
                                           t at: week put: (weekDayFragmentFor: lastday).
                                                      ]].
+
       lastday::lastday.
        (1 to: 7) do: [:d|  lastday:: lastday+1.
                                  t:: result at: d.
-                                (d >= nextMonthDays)  
-                                     ifTrue: [t at: (weeksToShow - 1)  
+                                (d > (7 - nextMonthDays))  
+                                     ifTrue: [t at:weeksToShow 
                                                   put: fragmentForDaysNotInCurrentMonth]
-                                     ifFalse: [t at: (weeksToShow - 1)  
+                                     ifFalse: [t at: weeksToShow                                                   
                                                     put: (weekDayFragmentFor: lastday)  ].
                                                    ]  .
+
       w::0.
       ^row: ((1 to: (7+6)) 
                    collect: [:a | ((a rem: 2) = 0)  
