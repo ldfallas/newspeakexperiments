@@ -32,6 +32,12 @@ class CalendarPresenter = Presenter (
 |
 )
 ('as yet unclassified'
+columnSeparator = (
+      |separator|
+	separator:: blank: 5.
+      ^separator.
+)
+
 definition = (
 	^column: {
             label:: subject theMonth name, ' ' , subject theYear asString.
@@ -44,12 +50,12 @@ fragmentForDaysNotInCurrentMonth = (
 )
 
 weekDayFragmentFor: dayNumber = (
-	^label:: dayNumber asString.
+	^link: (dayNumber asString) action: [].
 )
 
 weeks = (
 	|firstDayOfMonth result t previousMonthDays nextMonthDays 
-       weeksToShow lastday|
+       weeksToShow lastday w|
       firstDayOfMonth:: Date year: (subject theYear) 
                                         month: (subject theMonth name) 
                                         day: 1.
@@ -82,7 +88,11 @@ weeks = (
                                      ifFalse: [t at: (weeksToShow - 1)  
                                                     put: (weekDayFragmentFor: lastday)  ].
                                                    ]  .
-      ^row: (result collect: [:a | column: a]).
+      w::0.
+      ^row: ((1 to: (7+6)) 
+                   collect: [:a | ((a rem: 2) = 0)  
+                                         ifTrue: [columnSeparator ] 
+                                         ifFalse: [column: (result at: (w:: w+1))]]).
 )
 
 ))
