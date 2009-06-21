@@ -8,80 +8,75 @@ class HCalendar usingLib: platform = NewspeakObject (
      Presenter = platform HPresenter.
      Date = platform Date.
      Month = platform Month.
+     Color = platform Color.
 |
 )
 (
 
-class CalendarSubject fromDate: date = Subject (
+class CalendarSubject for: date = Subject (
 "Test subject"
 |
-  public theMonth = date  month.
-  public theYear = date year.
+   private date = date.
 |
 )
 ('as yet unclassified'
+changeDayTo: newDay <Number> = (
+	date:: Date year: year 
+                       month: (month name)
+                       day: newDay.
+)
+
 createPresenter = (
 	^CalendarPresenter new subject: self.
+)
+
+day ^ <Number> = (
+	^date dayOfMonth.
+)
+
+month ^ <Month>= (
+	^date month. 
+)
+
+moveToNextMonth = (
+	   date:: date addMonths: 1.
+)
+
+moveToPreviousMonth = (
+   date:: date addMonths: -1.
+)
+
+year ^ <Number> = (
+	^date year.
 )
 
 )
 
 class CalendarPresenter = Presenter (
-" Presenter."
+"Calendar presenter, shows the days of the a month."
 |
+ 
+	protected weeksRow
+      protected monthHolder
 |
 )
 ('as yet unclassified'
-columnSeparator = (
-      |separator|
-	separator:: blank: 5.
-      ^separator.
+addFirstWeekTo: result withDaysFromPreviousMonth: previousMonthDays = (
+     |t rowForInitialWeek|
+     rowForInitialWeek::1.
+	(1 to: 7) 
+          do: [:d|  t:: result at: d.
+                     (d <= previousMonthDays)  
+                        ifTrue: [t at: rowForInitialWeek 
+                                     put: fragmentForDaysNotInCurrentMonth]
+                        ifFalse: [t at: rowForInitialWeek 
+                                      put: (weekDayFragmentFor: (d - previousMonthDays))]].
 )
 
-definition = (
-	^column: {
-            label:: subject theMonth name, ' ' , subject theYear asString.
-            weeks.
-       }.
-)
-
-fragmentForDaysNotInCurrentMonth = (
-	^label: '  '.
-)
-
-weekDayFragmentFor: dayNumber = (
-	^link: (dayNumber asString) action: [].
-)
-
-weeks = (
-	|firstDayOfMonth result t previousMonthDays nextMonthDays 
-       weeksToShow lastday w|
-      firstDayOfMonth:: Date year: (subject theYear) 
-                                        month: (subject theMonth name) 
-                                        day: 1.
-      previousMonthDays:: firstDayOfMonth dayOfWeek - 1.
-      nextMonthDays:: 7 - ((((subject theMonth daysInMonth) + previousMonthDays)) rem: 7) .
-      weeksToShow:: ((subject theMonth daysInMonth) + 
-                                 previousMonthDays + nextMonthDays) / 7.
-
-      result::  (1 to: 7) collect: [ :x | Array new: weeksToShow ].
-       (1 to: 7) 
-            do: [:d|  t:: result at: d.
-                        (d <= previousMonthDays)  
-                           ifTrue: [t at: 1 put: fragmentForDaysNotInCurrentMonth]
-                           ifFalse: [t at: 1 put: (weekDayFragmentFor: (d - previousMonthDays))]].
-
-      lastday:: 7 - previousMonthDays.
-      2 to: (weeksToShow - 1) 
-         do: [:week | 
-                  (1 to: 7) do: [:day|
-                                          lastday:: lastday+1.
-                                          t:: result at: day.
-                                          t at: week put: (weekDayFragmentFor: lastday).
-                                                     ]].
-
-      lastday::lastday.
-       (1 to: 7) do: [:d|  lastday:: lastday+1.
+addLastWeekTo: result weeksToShow: weeksToShow lastDayAdded: lastDayAdded daysInNextMonthToShow: nextMonthDays= (
+      |lastday t| 
+      lastday:: lastDayAdded.
+	 (1 to: 7) do: [:d|  lastday:: lastday+1.
                                  t:: result at: d.
                                 (d > (7 - nextMonthDays))  
                                      ifTrue: [t at:weeksToShow 
@@ -89,12 +84,131 @@ weeks = (
                                      ifFalse: [t at: weeksToShow                                                   
                                                     put: (weekDayFragmentFor: lastday)  ].
                                                    ]  .
+)
 
-      w::0.
-      ^row: ((1 to: (7+6)) 
+addMonthWeeksTo: result weeksToShow: weeksToShow lastDayAdded: lastday= (
+         |t tmpLastDay|
+         tmpLastDay:: lastday.
+	   2 to: (weeksToShow - 1) 
+         do: [:week | 
+                  (1 to: 7) do: [:day|
+                                          tmpLastDay:: tmpLastDay+1.
+                                          t:: result at: day.
+                                          t at: week put: (weekDayFragmentFor: tmpLastDay).
+                                                     ]].
+         ^tmpLastDay.
+)
+
+columnSeparator = (
+      |separator|
+	separator:: blank: 5.
+      ^separator.
+)
+
+createColumnsFromWeekArray: weekArray = (
+       |w|
+        w::0.
+	 ^((1 to: (7+6)) 
                    collect: [:a | ((a rem: 2) = 0)  
                                          ifTrue: [columnSeparator ] 
-                                         ifFalse: [column: (result at: (w:: w+1))]]).
+                                         ifFalse: [column: (weekArray at: (w:: w+1))]])
+)
+
+definition = (
+    monthHolder:: 
+        holder: [
+           row: {          
+                link: '<' action: [ subject moveToPreviousMonth. 
+                                        refreshHolders. ]. 
+                blank: 1.   
+                column: {  header .
+                                weeks. }.
+                blank: 1.
+                link: '>' action: [ subject moveToNextMonth. 
+                                        refreshHolders. ]. 
+
+       }.].
+    ^monthHolder.
+)
+
+fragmentForDaysNotInCurrentMonth = (
+	^label: '  '.
+)
+
+header = (
+      |headerRow|
+	headerRow:: row: { 
+                                  filler.
+                                   label:: subject month name, ' ' , subject year asString.
+                                   filler.
+                                    }.
+     
+      ^headerRow.
+)
+
+highlightSelectedDay = (
+     |daystr| 
+      daystr:: subject day asString.
+	weeksRow 
+            ifNotNil: [ 
+             weeksRow children do: [ :c |
+                   (c class name asString = 'ColumnComposer' )
+                         ifTrue: [
+                                c children do: [ :alink |
+                                    (alink class name asString = 'HyperlinkFragment')
+                                        ifTrue:[
+                                              (alink label withBlanksTrimmed = daystr) 
+                                                  ifTrue: [ alink color: (Color red)] 
+                                                  ifFalse: [ alink color: (Color blue)]] .
+
+                          ]].
+             ].
+           ].
+)
+
+refreshHolders= (	
+      monthHolder refresh.
+)
+
+weekDayFragmentFor: dayNumber = (
+    |dayNumberText|
+    dayNumberText:: dayNumber asString.
+ 
+    ^link: dayNumberText
+        action: [ subject changeDayTo: dayNumber.
+                     highlightSelectedDay.
+                   ].
+)
+
+weeks = (
+	|firstDayOfMonth result t previousMonthDays nextMonthDays 
+       weeksToShow lastday |
+      firstDayOfMonth:: Date year: (subject year) 
+                                        month: (subject month name) 
+                                        day: 1.
+      previousMonthDays:: firstDayOfMonth dayOfWeek - 1.
+      nextMonthDays:: 7 - ((((subject month daysInMonth) + previousMonthDays)) rem: 7) .
+      weeksToShow:: ((subject month daysInMonth) + 
+                                 previousMonthDays + nextMonthDays) / 7.
+
+      result::  (1 to: 7) collect: [ :x | Array new: weeksToShow ].
+       
+      addFirstWeekTo: result withDaysFromPreviousMonth:previousMonthDays.
+ 
+      lastday:: 7 - previousMonthDays.
+
+      lastday::  addMonthWeeksTo: result 
+                           weeksToShow: weeksToShow 
+                           lastDayAdded: lastday.
+ 
+      addLastWeekTo: result
+                           weeksToShow: weeksToShow 
+                           lastDayAdded: lastday
+                           daysInNextMonthToShow: nextMonthDays. 
+     
+      weeksRow:: row: (createColumnsFromWeekArray: result).
+      highlightSelectedDay .
+      ^ weeksRow.
 )
 
 ))

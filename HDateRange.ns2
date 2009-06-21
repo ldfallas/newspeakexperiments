@@ -1,0 +1,44 @@
+Newsqueak2
+'LangexplrExperiments'
+
+class HDateRange usingLib: platform = (
+"Date range selector."
+|
+	Presenter = platform HPresenter.
+      Subject = platform Subject.
+      HCalendar = platform HCalendar.
+      platform = platform.
+|
+)
+(
+
+class DateRangePresenter = Presenter (
+"Presenter for date range."
+|
+|
+)
+('as yet unclassified'
+definition = (
+	^row: {
+          (((HCalendar usingLib: platform) CalendarSubject for: (subject initialDate)) createPresenter).
+          blank:49.
+(((HCalendar usingLib: platform) CalendarSubject for: (subject finalDate)) createPresenter).
+      }
+)
+
+)
+
+class DateRangeSubject from: initial to: final= Subject (
+"Data for the date range."
+|
+     private initialDate = initial.
+     private finalDate = final.
+|
+)
+('as yet unclassified'
+createPresenter = (
+
+	^ (DateRangePresenter new) subject: self.
+)
+
+))
