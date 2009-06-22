@@ -46,6 +46,10 @@ moveToPreviousMonth = (
    date:: date addMonths: -1.
 )
 
+selectedDate = (
+	^date.
+)
+
 year ^ <Number> = (
 	^date year.
 )
@@ -55,7 +59,7 @@ year ^ <Number> = (
 class CalendarPresenter = Presenter (
 "Calendar presenter, shows the days of the a month."
 |
- 
+      private onChangeBlock
 	protected weeksRow
       protected monthHolder
 |
@@ -114,6 +118,11 @@ createColumnsFromWeekArray: weekArray = (
                                          ifFalse: [column: (weekArray at: (w:: w+1))]])
 )
 
+dateChanged = (
+      highlightSelectedDay.
+	onChangeBlock ifNotNil: [ onChangeBlock value ].
+)
+
 definition = (
     monthHolder:: 
         holder: [
@@ -166,6 +175,10 @@ highlightSelectedDay = (
            ].
 )
 
+onChange: action <Block> = (
+	onChangeBlock:: action.
+)
+
 refreshHolders= (	
       monthHolder refresh.
 )
@@ -176,12 +189,12 @@ weekDayFragmentFor: dayNumber = (
  
     ^link: dayNumberText
         action: [ subject changeDayTo: dayNumber.
-                     highlightSelectedDay.
+                     dateChanged .
                    ].
 )
 
 weeks = (
-	|firstDayOfMonth result t previousMonthDays nextMonthDays 
+	|firstDayOfMonth result previousMonthDays nextMonthDays 
        weeksToShow lastday |
       firstDayOfMonth:: Date year: (subject year) 
                                         month: (subject month name) 
@@ -207,7 +220,7 @@ weeks = (
                            daysInNextMonthToShow: nextMonthDays. 
      
       weeksRow:: row: (createColumnsFromWeekArray: result).
-      highlightSelectedDay .
+      dateChanged .
       ^ weeksRow.
 )
 

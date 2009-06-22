@@ -15,15 +15,28 @@ class HDateRange usingLib: platform = (
 class DateRangePresenter = Presenter (
 "Presenter for date range."
 |
+	dateRangeTextHolder
 |
 )
 ('as yet unclassified'
+calendar: dateSubject = (
+      |aCalendar|
+	aCalendar:: dateSubject createPresenter.
+      aCalendar onChange: [ dateRangeTextHolder refresh ].
+      ^aCalendar.
+)
+
 definition = (
-	^row: {
-          (((HCalendar usingLib: platform) CalendarSubject for: (subject initialDate)) createPresenter).
+     dateRangeTextHolder::
+       holder: [label: subject initialDate selectedDate asString, ' - ',
+                              subject finalDate selectedDate asString].
+     ^heading: dateRangeTextHolder
+       details: [
+	 row: {
+          calendar: subject initialDate .
           blank:49.
-(((HCalendar usingLib: platform) CalendarSubject for: (subject finalDate)) createPresenter).
-      }
+          calendar: subject finalDate.
+      }]
 )
 
 )
@@ -31,8 +44,8 @@ definition = (
 class DateRangeSubject from: initial to: final= Subject (
 "Data for the date range."
 |
-     private initialDate = initial.
-     private finalDate = final.
+     private initialDate = (HCalendar usingLib: platform) CalendarSubject for: initial.
+     private finalDate = (HCalendar usingLib: platform) CalendarSubject for: final.
 |
 )
 ('as yet unclassified'
