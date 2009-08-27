@@ -1,0 +1,10 @@
+Newsqueak2
+'LangexplrExperiments-nested'
+
+class JSObject withContent: dContent =  (
+"Instances of this class represent JS objects."
+|
+	content = dContent.
+|
+)
+()

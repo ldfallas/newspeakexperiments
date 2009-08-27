@@ -1,0 +1,368 @@
+Newsqueak1
+'LangexplrExperiments'
+JSParserTests = TestCase (
+'as yet unclassified'
+arrayParser = (
+
+     ^jsParser JSGrammar new array
+)
+
+
+flattenCharCollectionToString: collection = (
+ 
+    | newCollection |
+    newCollection:: OrderedCollection new: (collection size).
+    ^(String withAll: (flatteningCollectedString: collection to: newCollection))
+	    
+)
+
+
+flattenCollectedString: collection = (
+ 
+    | newCollection |
+    newCollection:: OrderedCollection new: (collection size).
+    collection do:
+          [:value | 
+	      #OrderedCollection = (value class name)
+	          ifTrue: [ newCollection addLast: (getEscapedValue: value) ]
+	          ifFalse: [newCollection addLast: value]].
+    ^(String withAll: newCollection)
+	    
+)
+
+
+flatteningCollectedString: collection to: newCollection = (
+
+    collection do:
+          [:value | 
+	      #OrderedCollection = (value class name)
+	          ifTrue: [ flatteningCollectedString: value to: newCollection ]
+	          ifFalse: [value ~= nil ifTrue: [newCollection addLast: value]]].
+    ^newCollection
+	    
+)
+
+
+getEscapedValue: collection <OrderedCollection> = (
+
+     | result | 
+     ((collection at: 2) = ('"' at: 1) )
+         ifTrue: [result:: ('"' at: 1) ]
+         ifFalse:[result:: (' ' at: 1) ].
+     ^result
+)
+
+
+jsParser = (
+
+    |platform parser|
+    platform:: Platform new.
+    parser:: JSParser withParserLib: (BlocklessCombinatorialParsing usingLib: platform) usingLib: platform.
+   ^ parser
+)
+
+
+numberParser = (
+
+     ^jsParser JSGrammar new number
+)
+
+
+objectParser = (
+
+     ^jsParser JSGrammar new object
+)
+
+
+parserWithAST = (
+
+    ^jsParser JSGrammarWithAST new.
+)
+
+
+streamFromString: str <String> = (
+
+    ^ReadStream on:str from:1 to:(str size).
+)
+
+
+stringParser = (
+
+     ^jsParser JSGrammar new string
+)
+
+
+testEmptyObject = (
+
+    | parsed |
+    parsed:: objectParser parse: (streamFromString: '{ }').
+    assert:[(parsed token) size = 3].
+)
+
+
+testEscapedQuoteStringParsing = (
+
+   | result |
+     result:: stringParser parse: (streamFromString: '"H\"OLA"').
+     assert: [ (flattenCollectedString: (result token at: 2)) = 'H"OLA' ].
+)
+
+
+testFloatNumberParsing = (
+
+   | result |
+     result:: numberParser parse: (streamFromString: '234.32;').
+     assert: [ (flattenCharCollectionToString: result token) = '234.32' ].
+)
+
+
+testFunctionExpression = (
+
+    | parsed |
+    parsed:: parserWithAST functionexpression parse: (streamFromString: 'function (x ,y) {    }').
+    assert:[parsed name = #function].
+    assert:[(parsed contents at: 1) = nil].
+    assert:[((parsed contents at: 2) at: 1) = 'x'].
+)
+
+
+testMemberExpression = (
+
+    | parsed |
+    parsed:: parserWithAST memberexpression
+                      parse: (streamFromString: 'function (x ,y) {    }').
+    assert:[parsed name = #function].
+    assert:[(parsed contents at: 1) = nil].
+    assert:[((parsed contents at: 2) at: 1) = 'x'].
+)
+
+
+testMemberExpression2 = (
+
+    |parsed|
+    parsed:: parserWithAST memberexpression
+                      parse: (streamFromString: 'a[1]').   
+    assert:[parsed  name = #arrayAccess]. 
+    assert:[parsed contents size = 2].
+    assert:[(parsed contents at: 1) = 'a'].
+    assert:[(parsed contents at: 2) = 1].
+)
+
+
+testMemberExpression3 = (
+
+    |parsed expected|
+    parsed:: parserWithAST memberexpression
+                      parse: (streamFromString: 'x.y[1].w[4][7].j').   
+    expected:: 
+           tn: #memberAccess
+               contents: {
+                  tn: #arrayAccess
+                    contents: { 
+                       tn: #arrayAccess 
+                         contents: {
+                              tn: #memberAccess
+                              contents: {
+                                  tn: #arrayAccess
+                                    contents: {
+                                         tn: #memberAccess
+                                           contents: { 'x'. 'y'. }.
+                                         1.
+                                   }.
+                                  'w'.
+                              }.
+                              4.
+                         }.
+                       7.
+                    }.
+	              'j'.
+	        }.
+
+    assert:[parsed   sameAs: expected]. 
+)
+
+
+testMixedCallExpression = (
+
+    |parsed expected|
+    parsed:: parserWithAST callExpression
+                      parse: (streamFromString: 'goo(1,4).foo("x")[3](54)').   
+    expected:: 
+           tn: #call
+               contents: {
+                   tn: #arrayAccess
+                     contents: {
+                          tn: #call
+                             contents: {
+                                  tn: #memberAccess 
+                                    contents: { 
+                                            tn: #call
+                                                   contents: {
+                                                        'goo'.
+                                                        {1. 4.}.
+                                             }.
+                                            'foo'.
+                                     }.
+                                   {'x'}.
+                              }.
+                          3.
+                     }.
+                   {54.}.
+               }.
+    assert: [parsed sameAs: expected].
+)
+
+
+testNegativeNumberParsing = (
+
+   | result |
+     result:: numberParser parse: (streamFromString: '-234').
+     assert: [ (flattenCharCollectionToString: result token) = '-234' ].
+)
+
+
+testNewExpression1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST memberexpression
+                      parse: (streamFromString: 'new foo()').   
+    expected:: 
+           tn: #new
+               contents: {
+                   'foo'.
+                   {}.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testNumberParsing = (
+
+   | result |
+     result:: numberParser parse: (streamFromString: '1234').
+     assert: [ (flattenCharCollectionToString: result token ) = '1234' ].
+)
+
+
+testPrimaryExpression = (
+
+    |parsed|
+    parsed::   parserWithAST parse: (streamFromString: '134').
+    assert:[parsed = 134].
+    parsed::   parserWithAST parse: (streamFromString: 'hola').
+    assert:[parsed = 'hola'].
+    parsed::   parserWithAST parse: (streamFromString: '"hola2"').
+    assert:[parsed = 'hola2'].
+)
+
+
+testSimpleArray = (
+
+    |parsed|
+    parsed:: arrayParser parse: (streamFromString: '[1,"a",3,4]').
+    assert:[(parsed token at: 2)  size = 4].
+)
+
+
+testSimpleCallExpression = (
+
+    |parsed expected|
+    parsed:: parserWithAST callExpression
+                      parse: (streamFromString: 'foo("x","b","a")').   
+    expected:: 
+           tn: #call
+               contents: {
+                   'foo'.
+                   {'x'. 'b'.'a'.}.
+               }.
+    assert: [parsed sameAs: expected].
+)
+
+
+testSimpleIdentifier = (
+
+    | parsed |
+    parsed:: parserWithAST parse: (streamFromString: '$hola').
+    assert:[parsed = '$hola'].
+)
+
+
+testSimpleObject = (
+
+    | parsed |
+    parsed:: objectParser parse: (streamFromString: '{ "foo": 3423, "hoo"  :"asd"}').
+    assert:[(parsed token at: 2) size = 2].
+)
+
+
+testSimpleObjectWithArrayAst = (
+
+    | parsed |
+    parsed:: parserWithAST parse: (streamFromString: '[{ "foo": 3423, "hoo"  :"asd"},{ "foo": 435, "hoo"  :"fsasd"}]').
+    assert:[((parsed at: 2) foo)  = 435].
+)
+
+
+testSimpleObjectWithAst = (
+
+    | parsed |
+    parsed:: parserWithAST parse: (streamFromString: '{ "foo": 3423, "hoo"  :"asd"}').
+    assert:[(parsed hoo)  = 'asd'].
+)
+
+
+testSimpleObjectWithAst2 = (
+
+    | parsed |
+    parsed:: parserWithAST parse: (streamFromString: '{ "foo": 3423, "hoo"  :"asd"}').
+    assert:[(parsed foo)  = 3423].
+)
+
+
+testSimpleObjectWithAst3 = (
+
+    | parsed |
+    parsed:: parserWithAST parse: (streamFromString: '[{ "hoo":null, "f_oo"  :3423}]').
+    assert:[((parsed at:1) f_oo)  = 3423].
+)
+
+
+testSimpleObjectWithAst4 = (
+
+    | parsed |
+    parsed:: parserWithAST parse: (streamFromString: '{ "foo": 34.23, "hoo"  :"asd"}').
+    assert:[(parsed foo)  = 34.23].
+)
+
+
+testSimpleObjectWithAst5 = (
+
+    | parsed |
+    parsed:: parserWithAST 
+                         parse: (streamFromString: '[{ "name": "Wiston Smith",
+                                                                       "description"  :"Protagonist"},
+                                                                     { "name": "Julia",
+                                                                       "description"  :"Lover"},
+                                                                     { "name": "O Brien",
+                                                                       "description"  :"Goverment agent"}]').
+    assert:[((parsed at: 2) description)  = 'Lover'].
+    assert:[((parsed at: 3) js_name)  = 'O Brien'].
+   " assert:[((parsed at: 3) isString)  = 'O Brien']."
+)
+
+
+testSimpleStringParsing = (
+
+   | result |
+     result:: stringParser parse: (streamFromString: '"HOLA"').
+     assert: [ ((result token at: 2) size) = 4 ].
+)
+
+
+tn: name contents: contents = (
+
+   ^(JSParser new) TestingAstNode name: name contents: contents.
+)
+
+
+)

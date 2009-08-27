@@ -1,0 +1,358 @@
+Newsqueak2
+'LangexplrExperiments'
+
+class JSParser withParserLib: parserLibrary usingLib: platform =  (
+"Experiment for JS parser based on the description from http://www.json.org/fatfree.html "
+|
+	ExecutableGrammar = parserLibrary ExecutableGrammar.
+	CharParser = parserLibrary CharParser.
+	PredicateTokenParser = parserLibrary PredicateTokenParser.
+	Dictionary = platform Dictionary.
+	OrderedCollection = platform OrderedCollection.
+	Number = platform Number.
+|
+)
+(
+
+class JSGrammar = ExecutableGrammar (
+"Experiment for JS grammar based on the description from http://www.json.org/fatfree.html "
+|
+      doubleQuote = (char: $").
+      backslash = (char: $\).
+	str = doubleQuote,((backslash, ( char: $" ))   | 
+                                    (backslash, ( char: $/ ))  |
+                                    (backslash, backslash)    |
+                                    (backslash, ( char: $r ))   |
+                                    (backslash, ( char: $n ))   |
+                                    (backslash, ( char: $t ))   |
+  	                              (charExceptFor: $")) star, doubleQuote.
+	string = tokenFor: str.
+	
+	negSign = (char: $-).
+	plusSign = (char: $+).
+	digit = (charBetween: $0 and: $9).
+	dot = (char: $. ) .
+	num = negSign opt, digit, digit star, dot opt,digit star, ((char: $e) | (char: $E)) opt, (plusSign | negSign) opt,digit star.
+	number = tokenFor: num.
+
+     tdot = tokenFor:dot.
+
+      leftparen = tokenFromChar: $(.
+      rightparen =tokenFromChar: $).	
+	
+      leftbrace = tokenFromChar: ${.
+      rightbrace =tokenFromChar: $}.
+      colon = tokenFromChar: $:.
+      comma = tokenFromChar: $,.
+      definition = string,colon,value.
+      obj =  leftbrace,  (definition starSeparatedBy: comma),rightbrace.
+      object = tokenFor: obj.
+
+      leftbracket = tokenFromChar: $[.
+	rightbracket = tokenFromChar: $].
+      arr = leftbracket, (value starSeparatedBy: comma), rightbracket.
+      array = tokenFor: arr.
+
+      ttrue = tokenFromSymbol: #true.
+      tfalse = tokenFromSymbol: #false.
+      null = tokenFromSymbol: #null.
+      function = tokenFromSymbol: #function.
+      tnew = tokenFromSymbol: #new.
+      break = tokenFromSymbol: #break.
+      case = tokenFromSymbol: #case.
+      catch = tokenFromSymbol: #catch.
+      continue = tokenFromSymbol: #continue.
+      default = tokenFromSymbol: #default.
+      delete = tokenFromSymbol: #delete.
+      do = tokenFromSymbol: #do.
+      else = tokenFromSymbol: #else.
+      finally = tokenFromSymbol: #finally.
+      for = tokenFromSymbol: #for.
+      if = tokenFromSymbol: #if.
+      in = tokenFromSymbol: #in.
+      instanceof = tokenFromSymbol: #instanceof.
+      return = tokenFromSymbol: #return.
+      switch = tokenFromSymbol: #switch.
+      this = tokenFromSymbol: #this.
+      throw = tokenFromSymbol: #throw.
+      try = tokenFromSymbol: #try.
+      typeof  = tokenFromSymbol: #typeof.
+      var = tokenFromSymbol: #var.
+      void = tokenFromSymbol: #void.
+      while = tokenFromSymbol: #while.
+      with = tokenFromSymbol: #with.
+
+      keyword = break | else | tnew | case | finally | return | catch | for | 
+                       switch | continue | function | this | default | if | throw | 
+                       delete | in | try | do | instanceof | typeof | var | void | 
+                       while | with. 
+ 
+      letter = (charBetween: $a and: $z) | (charBetween: $A and: $Z).
+      identifierStart =  letter | (char: $$) | (char: $_).
+      identifier =  (keyword not) &(tokenFor: (identifierStart), (identifierStart | digit) star) .
+
+      value =  string | number | object | array | ttrue | tfalse | null | identifier .      
+  
+      literal  = null | ttrue | tfalse | number | string.
+
+      primaryexpression  = this | identifier | literal | array | object.
+
+      functionexpression = function , identifier opt, 
+                                       leftparen,formalparamlist, rightparen ,
+                                       leftbrace,rightbrace.
+      formalparamlist = identifier , (comma , identifier) star. 
+
+      memberexpression =   (simplememberexpression  ),
+                                         (( leftbracket, expression, rightbracket) | ( tdot, identifier)) star.
+     
+     simplememberexpression = primaryexpression | 
+                                               functionexpression  |                        
+                                                (tnew,memberexpression, leftparen, rightparen).
+      callExpression =  (simplememberexpression  ),
+                                 ( arguments |
+                                  ( leftbracket, expression, rightbracket) | 
+                                  ( tdot, identifier)  ) star.
+      simpleCallExpression = memberexpression , arguments.
+      arguments = leftparen , (expression, (comma, expression) star) opt, rightparen.
+      expression = primaryexpression.
+|
+)
+('as yet unclassified'
+charExceptFor: aChar = (
+	^CharExceptForParser new for: aChar
+)
+
+)
+
+class CharExceptForParser = PredicateTokenParser (
+"Parses any character expect for the specified."
+|
+
+|
+)
+('as yet unclassified'
+for: aChar = (
+	^self accept: [:c | c ~= aChar] errorMsg: ''
+)
+
+)
+
+class TestingAstNode name: theName contents: theContent = (
+"Ast node used for parser tests"
+|
+	public name = theName.
+	public contents = theContent.
+|
+)
+('as yet unclassified'
+private compare: a with: b = (
+      |t|
+	(a respondsTo:  #sameAs:)
+			ifTrue: [t:: a sameAs: b]
+			ifFalse: [t:: a = b] .
+     t ifFalse: [break].
+     ^t.
+)
+
+sameAs: other = (
+     |t i|
+      
+     ^ (  (compare: other name with: name)
+             and: [compare: contents size with: other contents size]  ) 
+              and: [
+
+	              t: true.
+	              i:1.
+	              other contents do: [ :e |  
+		                   t ifTrue: 
+		                        [ t:: compare: e with: (contents at: i).].
+		                   i:i+1.].
+	              t].
+	
+)
+
+)
+
+class JSObject withContent: dContent =  (
+"Instances of this class represent JS objects."
+|
+	content = dContent.
+|
+)
+('as yet unclassified'
+doesNotUnderstand: message = (
+      | fieldName |
+      fieldName:: message selector string.
+      (fieldName beginsWith: 'json_')  
+             ifTrue: [fieldName:: fieldName allButFirst: 5].
+	^content  at: fieldName ifAbsent: [nil].
+)
+
+)
+
+class JSGrammarWithAST = JSGrammar(
+"Parses a JS File and generates and Ast"
+|
+	
+|
+)
+('as yet unclassified'
+arguments = (
+		^super arguments wrapper: [:lp :args :rp | flattenArguments: args  ].
+)
+
+array = (
+	^super array wrapper: [:a | (a token at: 2)  ].
+)
+
+callExpression = (
+		^super callExpression 
+	                 wrapper: [:id :col | 
+		                       flattenCallExpression: col from: id.
+		                                           ].
+)
+
+flattenArguments: args = (
+	|col| 
+
+	^(args size > 0 )
+           ifTrue: [
+               col: OrderedCollection new.
+	         col addLast: (args at: 1).
+	         ((args at: 2) size > 0) ifTrue: [
+		       (args at: 2) do: [:i | col addLast: (i at: 2) ].
+		   ].
+	         col asArray.
+	     ]
+           ifFalse: [ {} ].
+)
+
+flattenCallExpression:col from: initial = (
+	|tmp|
+	tmp: initial.
+	col do: [ :i |
+		   ((i class name) = #Array) ifTrue:[ tmp:: TestingAstNode  
+			                                        name: #call 
+			                                        contents: {tmp. i.}]
+                 ifFalse: [
+                          (((i at: 1) token) = $.) ifTrue:[ tmp:: TestingAstNode  
+			                                        name: #memberAccess 
+			                                        contents: {tmp. i at: 2.}].
+                          (((i at: 1) token) = $[) ifTrue:[ tmp:: TestingAstNode  
+			                                        name: #arrayAccess 
+			                                        contents: {tmp. i at: 2.}].
+		   ].
+		 ].
+	^tmp.
+
+)
+
+flattenCharCollectionToString: collection = (
+    | newCollection |
+    newCollection:: OrderedCollection new: (collection size).
+    ^(String withAll: (flatteningCollectedString: collection to: newCollection))
+)
+
+flattenMemberExpression: col from: initial = (	
+	|tmp|
+	tmp: initial.
+	col do: [ :i |
+		   (((i at: 1) token) = $.) ifTrue:[ tmp:: TestingAstNode  
+			                                        name: #memberAccess 
+			                                        contents: {tmp. i at: 2.}].
+	 	   (((i at: 1) token) = $[) ifTrue:[ tmp:: TestingAstNode  
+			                                        name: #arrayAccess 
+			                                        contents: {tmp. i at: 2.}].
+		 ].
+	^tmp.
+)
+
+flatteningCollectedString: collection to: newCollection = (
+    collection do:
+          [:value | 
+	      #OrderedCollection = (value class name)
+	          ifTrue: [ flatteningCollectedString: value to: newCollection ]
+	          ifFalse: [value ~= nil ifTrue: [newCollection addLast: value]]].
+    ^newCollection
+)
+
+functionexpression = (
+	^super functionexpression wrapper:
+	    [:fun :fname :lp :params :rp :lb :rb |  TestingAstNode name: #function
+		                                contents: {fname. params. }].
+)
+
+getEscapedValue: collection <OrderedCollection> = (
+     | result | 
+     ((collection at: 2) = $n )
+         ifTrue: [result:: string lf ]
+         ifFalse:[result:: (collection at: 2) ].
+     ^result
+)
+
+identifier  = (
+	^super identifier wrapper: [:t :k |  (flattenCharCollectionToString: (k token  ))].
+)
+
+memberexpression = (
+	^super memberexpression 
+	                  wrapper: [:id :col | 
+		                                (col size = 0) 
+		                                ifTrue: [ id]
+                                            ifFalse: [ flattenMemberExpression:col from:id].
+		                                           ].
+)
+
+messageSelector = (
+	^super arguments wrapper: [:lp :args :rp | flattenArguments: args].
+)
+
+null = (
+	^ super null wrapper: [:o | nil].
+)
+
+number = (
+	^super number wrapper: [:o | Number readFrom: (flattenCharCollectionToString: (o token)) ].
+)
+
+object  = (
+	^super object wrapper: 
+	      [:obj | JSObject withContent: 
+		               (Dictionary newFrom: ((obj token at: 2) collect: [:e | (e at: 1) -> (e at: 3)]))].
+)
+
+parse: input  = (
+	^super value parse: input.
+)
+
+string  = (
+	^super string wrapper: 
+	       [:t | flattenCollectedString: (t token at: 2)].
+)
+
+this = (
+	^super this wrapper: [:o | #this].
+)
+
+'primitive'
+tfalse  = (
+	^super tfalse wrapper: [:o | false].
+)
+
+ttrue = (
+	^super ttrue wrapper: [:o | true].
+)
+
+'complex'
+flattenCollectedString: collection = (
+    | newCollection |
+    newCollection:: OrderedCollection new: (collection size).
+    collection do:
+          [:value | 
+	      #OrderedCollection = (value class name)
+	          ifTrue: [ newCollection addLast: (getEscapedValue: value) ]
+	          ifFalse: [newCollection addLast: value]].
+    ^(String withAll: newCollection)
+)
+
+))
