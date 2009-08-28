@@ -236,6 +236,24 @@ testNewExpression1 = (
 )
 
 
+testNewExpression2 = (
+
+    |parsed expected|
+    parsed:: parserWithAST newExpression
+                      parse: (streamFromString: 'new new foo()').   
+    expected:: 
+        tn: #new
+           contents: {
+           tn: #new
+               contents: {
+                   'foo'.
+                   {}.
+               }
+              }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
 testNumberParsing = (
 
    | result |

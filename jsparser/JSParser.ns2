@@ -107,13 +107,20 @@ class JSGrammar = ExecutableGrammar (
      
      simplememberexpression = primaryexpression | 
                                                functionexpression  |                        
-                                                (tnew,memberexpression, leftparen, rightparen).
+                                                simpleNewExpression.
+      simpleNewExpression = tnew,memberexpression, arguments.
+
+      
+  
       callExpression =  (simplememberexpression  ),
                                  ( arguments |
                                   ( leftbracket, expression, rightbracket) | 
                                   ( tdot, identifier)  ) star.
       simpleCallExpression = memberexpression , arguments.
       arguments = leftparen , (expression, (comma, expression) star) opt, rightparen.
+
+      newExpression = memberexpression | tnew, memberexpression.
+
       expression = primaryexpression.
 |
 )
@@ -214,8 +221,8 @@ callExpression = (
 
 flattenArguments: args = (
 	|col| 
-
-	^(args size > 0 )
+      
+	^((args isNil not) and: [args size > 0 ])
            ifTrue: [
                col: OrderedCollection new.
 	         col addLast: (args at: 1).
@@ -323,6 +330,14 @@ object  = (
 
 parse: input  = (
 	^super value parse: input.
+)
+
+simpleNewExpression = (
+	^super simpleNewExpression 
+	              wrapper: [:nt :mem :args | 
+		                            TestingAstNode  
+		                                      name: #new 
+		                                      contents:{ mem. args.  } ].
 )
 
 string  = (
