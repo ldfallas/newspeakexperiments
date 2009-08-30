@@ -224,7 +224,7 @@ testNegativeNumberParsing = (
 testNewExpression1 = (
 
     |parsed expected|
-    parsed:: parserWithAST memberexpression
+    parsed:: parserWithAST newExpression
                       parse: (streamFromString: 'new foo()').   
     expected:: 
            tn: #new
