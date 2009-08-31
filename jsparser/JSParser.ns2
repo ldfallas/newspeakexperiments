@@ -28,6 +28,9 @@ class JSGrammar = ExecutableGrammar (
   	                              (charExceptFor: $")) star, doubleQuote.
 	string = tokenFor: str.
 	
+	tilde = char: $~.
+	exclamation = char: $!.
+	
 	negSign = (char: $-).
 	plusSign = (char: $+).
 	digit = (charBetween: $0 and: $9).
@@ -121,6 +124,25 @@ class JSGrammar = ExecutableGrammar (
 
       newExpression = memberexpression | simpleNewMemberExpression.
       simpleNewMemberExpression = tnew, memberexpression.
+ 
+      plusPlus = plusSign,plusSign.
+      minusMinus = negSign,negSign.
+
+      leftHandSideExpression = newExpression | callExpression.
+      postfixExpression = leftHandSideExpression , 
+                                           ((plusPlus | minusMinus) star).
+
+
+      unaryExpression =
+          postfixExpression | complexUnaryExpression.
+
+      complexUnaryExpression = 
+           (typeof, unaryExpression) |
+           (delete, unaryExpression) | 
+           (void, unaryExpression) | 
+           (plusPlus, unaryExpression) |
+           (minusMinus, unaryExpression) |
+           (( plusSign | negSign | tilde | exclamation ), unaryExpression).
 
       expression = primaryexpression.
 |
@@ -220,6 +242,10 @@ callExpression = (
 		                                           ].
 )
 
+complexUnaryExpression = (
+	^super complexUnaryExpression wrapper: [:op :exp | TestingAstNode name: #unary contents: { op. exp. }  ].
+)
+
 flattenArguments: args = (
 	|col| 
       
@@ -315,6 +341,10 @@ messageSelector = (
 	^super arguments wrapper: [:lp :args :rp | flattenArguments: args].
 )
 
+minusMinus = (
+	^super minusMinus wrapper: [:m1 :m2 | '--' ].
+)
+
 null = (
 	^ super null wrapper: [:o | nil].
 )
@@ -331,6 +361,22 @@ object  = (
 
 parse: input  = (
 	^super value parse: input.
+)
+
+plusPlus = (
+	^super plusPlus wrapper: [:p1 :p2 | '++' ].
+)
+
+postfixExpression = (
+	^super postfixExpression 
+	               wrapper: [:obj :post | 		                            
+		                          post inject: obj into: [:o :i |
+			                            TestingAstNode name: #postfix
+			                                        contents: {
+			                                             i at: 1.
+			                                             o.
+			                                        }.
+			                    ] ]. 
 )
 
 simpleNewExpression = (

@@ -262,6 +262,46 @@ testNumberParsing = (
 )
 
 
+testPostFixExpression1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST postfixExpression
+                      parse: (streamFromString: 'x++').   
+    expected:: 
+           tn: #postfix
+               contents: {
+                   $+.
+                   'x'.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testPostFixExpression2 = (
+
+    |parsed expected|
+    parsed:: parserWithAST postfixExpression
+                      parse: (streamFromString: 'x').   
+    expected:: 'x'.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testPostFixExpression3 = (
+
+    |parsed expected|
+    parsed:: parserWithAST postfixExpression
+                      parse: (streamFromString: 'x--').   
+    expected:: 
+           tn: #postfix
+               contents: {
+                   $-.
+                   'x'.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
 testPrimaryExpression = (
 
     |parsed|
@@ -374,6 +414,106 @@ testSimpleStringParsing = (
    | result |
      result:: stringParser parse: (streamFromString: '"HOLA"').
      assert: [ ((result token at: 2) size) = 4 ].
+)
+
+
+testUnaryExpression1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST unaryExpression
+                      parse: (streamFromString: 'x').   
+    expected:: 'x'.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testUnaryExpression2 = (
+
+    |parsed expected|
+    parsed:: parserWithAST unaryExpression
+                      parse: (streamFromString: 'delete x').   
+    expected:: 
+           tn: #unary
+               contents: {
+                   'delete'.
+                   'x'.
+               }.
+   assert:[parsed sameAs: expected].
+)
+
+
+testUnaryExpression3 = (
+
+    |parsed expected|
+    parsed:: parserWithAST unaryExpression
+                      parse: (streamFromString: 'typeof x').   
+    expected:: 
+           tn: #unary
+               contents: {
+                   'typeof'.
+                   'x'.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testUnaryExpression4 = (
+
+    |parsed expected|
+    parsed:: parserWithAST unaryExpression
+                      parse: (streamFromString: '++x').   
+    expected:: 
+           tn: #unary
+               contents: {
+                   '++'.
+                   'x'.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testUnaryExpression5 = (
+
+    |parsed expected|
+    parsed:: parserWithAST unaryExpression
+                      parse: (streamFromString: '--x').   
+    expected:: 
+           tn: #unary
+               contents: {
+                   '--'.
+                   'x'.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testUnaryExpression6 = (
+
+    |parsed expected|
+    parsed:: parserWithAST unaryExpression
+                      parse: (streamFromString: '--x').   
+    expected:: 
+           tn: #unary
+               contents: {
+                   '--'.
+                   'x'.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testUnaryExpression7 = (
+
+    |parsed expected|
+    parsed:: parserWithAST unaryExpression
+                      parse: (streamFromString: '!x').   
+    expected:: 
+           tn: #unary
+               contents: {
+                   '!'.
+                   'x'.
+               }.
+   assert:[parsed sameAs: expected]. 
 )
 
 
