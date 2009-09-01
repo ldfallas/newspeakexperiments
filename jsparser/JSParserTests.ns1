@@ -2,96 +2,6 @@ Newsqueak1
 'LangexplrExperiments'
 JSParserTests = TestCase (
 'as yet unclassified'
-arrayParser = (
-
-     ^jsParser JSGrammar new array
-)
-
-
-flattenCharCollectionToString: collection = (
- 
-    | newCollection |
-    newCollection:: OrderedCollection new: (collection size).
-    ^(String withAll: (flatteningCollectedString: collection to: newCollection))
-	    
-)
-
-
-flattenCollectedString: collection = (
- 
-    | newCollection |
-    newCollection:: OrderedCollection new: (collection size).
-    collection do:
-          [:value | 
-	      #OrderedCollection = (value class name)
-	          ifTrue: [ newCollection addLast: (getEscapedValue: value) ]
-	          ifFalse: [newCollection addLast: value]].
-    ^(String withAll: newCollection)
-	    
-)
-
-
-flatteningCollectedString: collection to: newCollection = (
-
-    collection do:
-          [:value | 
-	      #OrderedCollection = (value class name)
-	          ifTrue: [ flatteningCollectedString: value to: newCollection ]
-	          ifFalse: [value ~= nil ifTrue: [newCollection addLast: value]]].
-    ^newCollection
-	    
-)
-
-
-getEscapedValue: collection <OrderedCollection> = (
-
-     | result | 
-     ((collection at: 2) = ('"' at: 1) )
-         ifTrue: [result:: ('"' at: 1) ]
-         ifFalse:[result:: (' ' at: 1) ].
-     ^result
-)
-
-
-jsParser = (
-
-    |platform parser|
-    platform:: Platform new.
-    parser:: JSParser withParserLib: (BlocklessCombinatorialParsing usingLib: platform) usingLib: platform.
-   ^ parser
-)
-
-
-numberParser = (
-
-     ^jsParser JSGrammar new number
-)
-
-
-objectParser = (
-
-     ^jsParser JSGrammar new object
-)
-
-
-parserWithAST = (
-
-    ^jsParser JSGrammarWithAST new.
-)
-
-
-streamFromString: str <String> = (
-
-    ^ReadStream on:str from:1 to:(str size).
-)
-
-
-stringParser = (
-
-     ^jsParser JSGrammar new string
-)
-
-
 testEmptyObject = (
 
     | parsed |
@@ -210,6 +120,52 @@ testMixedCallExpression = (
                    {54.}.
                }.
     assert: [parsed sameAs: expected].
+)
+
+
+testMultiplicativeExpression1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST multiplicativeExpression
+                      parse: (streamFromString: '12 * 2').   
+    expected:: 
+           tn: #multiplicative
+               contents: {
+                   $*.
+                   12.
+                   2.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testMultiplicativeExpression2 = (
+
+    |parsed expected|
+    parsed:: parserWithAST multiplicativeExpression
+                      parse: (streamFromString: '12').   
+    expected:: 12.
+   assert:[parsed = expected]. 
+)
+
+
+testMultiplicativeExpression3 = (
+
+    |parsed expected|
+    parsed:: parserWithAST multiplicativeExpression
+                      parse: (streamFromString: 'x % 2 / 29').   
+    expected:: 
+           tn: #multiplicative
+               contents: {
+                   $/.
+                   tn: #multiplicative
+                     contents: {
+                          $%.
+                          'x'.
+                          2.}.
+                   29.
+               }.
+   assert:[parsed sameAs: expected]. 
 )
 
 
@@ -510,10 +466,101 @@ testUnaryExpression7 = (
     expected:: 
            tn: #unary
                contents: {
-                   '!'.
+                   $!.
                    'x'.
                }.
    assert:[parsed sameAs: expected]. 
+)
+
+
+'utility'
+arrayParser = (
+
+     ^jsParser JSGrammar new array
+)
+
+
+flattenCharCollectionToString: collection = (
+ 
+    | newCollection |
+    newCollection:: OrderedCollection new: (collection size).
+    ^(String withAll: (flatteningCollectedString: collection to: newCollection))
+	    
+)
+
+
+flattenCollectedString: collection = (
+ 
+    | newCollection |
+    newCollection:: OrderedCollection new: (collection size).
+    collection do:
+          [:value | 
+	      #OrderedCollection = (value class name)
+	          ifTrue: [ newCollection addLast: (getEscapedValue: value) ]
+	          ifFalse: [newCollection addLast: value]].
+    ^(String withAll: newCollection)
+	    
+)
+
+
+flatteningCollectedString: collection to: newCollection = (
+
+    collection do:
+          [:value | 
+	      #OrderedCollection = (value class name)
+	          ifTrue: [ flatteningCollectedString: value to: newCollection ]
+	          ifFalse: [value ~= nil ifTrue: [newCollection addLast: value]]].
+    ^newCollection
+	    
+)
+
+
+getEscapedValue: collection <OrderedCollection> = (
+
+     | result | 
+     ((collection at: 2) = ('"' at: 1) )
+         ifTrue: [result:: ('"' at: 1) ]
+         ifFalse:[result:: (' ' at: 1) ].
+     ^result
+)
+
+
+jsParser = (
+
+    |platform parser|
+    platform:: Platform new.
+    parser:: JSParser withParserLib: (BlocklessCombinatorialParsing usingLib: platform) usingLib: platform.
+   ^ parser
+)
+
+
+numberParser = (
+
+     ^jsParser JSGrammar new number
+)
+
+
+objectParser = (
+
+     ^jsParser JSGrammar new object
+)
+
+
+parserWithAST = (
+
+    ^jsParser JSGrammarWithAST new.
+)
+
+
+streamFromString: str <String> = (
+
+    ^ReadStream on:str from:1 to:(str size).
+)
+
+
+stringParser = (
+
+     ^jsParser JSGrammar new string
 )
 
 

@@ -30,6 +30,9 @@ class JSGrammar = ExecutableGrammar (
 	
 	tilde = char: $~.
 	exclamation = char: $!.
+	starChar = char: $*.
+	slash = char: $/.
+	modulo = char: $%.
 	
 	negSign = (char: $-).
 	plusSign = (char: $+).
@@ -38,6 +41,9 @@ class JSGrammar = ExecutableGrammar (
 	num = negSign opt, digit, digit star, dot opt,digit star, ((char: $e) | (char: $E)) opt, (plusSign | negSign) opt,digit star.
 	number = tokenFor: num.
 
+     tmodulo = tokenFor: modulo.
+     tslash = tokenFor: slash.
+     tstarChar = tokenFor: starChar.
      tdot = tokenFor:dot.
 
       leftparen = tokenFromChar: $(.
@@ -144,7 +150,10 @@ class JSGrammar = ExecutableGrammar (
            (minusMinus, unaryExpression) |
            (( plusSign | negSign | tilde | exclamation ), unaryExpression).
 
-      expression = primaryexpression.
+      multiplicativeExpression = 
+              unaryExpression, ((tstarChar | tslash | tmodulo), unaryExpression) star.     
+
+      expression = primaryexpression .
 |
 )
 ('as yet unclassified'
@@ -243,7 +252,14 @@ callExpression = (
 )
 
 complexUnaryExpression = (
-	^super complexUnaryExpression wrapper: [:op :exp | TestingAstNode name: #unary contents: { op. exp. }  ].
+	^super complexUnaryExpression 
+	             wrapper: [:op :exp | 
+		                  TestingAstNode 
+		                           name: #unary 
+		                           contents: { (op respondsTo: #token) 
+		                                                     ifTrue: [op token]
+		                                                     ifFalse: [op] . 
+		                                            exp. }  ].
 )
 
 flattenArguments: args = (
@@ -343,6 +359,19 @@ messageSelector = (
 
 minusMinus = (
 	^super minusMinus wrapper: [:m1 :m2 | '--' ].
+)
+
+multiplicativeExpression = (
+	^super multiplicativeExpression 
+	                  wrapper: [:first :rest |  
+		                                rest inject: first into: [ 
+			                                 :current :next |
+			                                 TestingAstNode
+			                                     name: #multiplicative
+			                                     contents: { (next at: 1) token.
+			                                                       current.
+			                                                       next at: 2. }.  
+			                     ]].
 )
 
 null = (
