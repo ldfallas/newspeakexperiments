@@ -33,6 +33,9 @@ class JSGrammar = ExecutableGrammar (
 	starChar = char: $*.
 	slash = char: $/.
 	modulo = char: $%.
+	pipe = char: $|.
+      amp = char: $&.
+      cir = char: $^.
 	
 	negSign = (char: $-).
 	plusSign = (char: $+).
@@ -49,16 +52,26 @@ class JSGrammar = ExecutableGrammar (
      tmodulo = tokenFor: modulo.
      tslash = tokenFor: slash.
      tstarChar = tokenFor: starChar.
+     texclamation = tokenFor:exclamation.
      tdot = tokenFor:dot.
      tLt = tokenFor: lt.
      tGt = tokenFor: gt.
-     tEq = tokenFor: eq.
+     tEq = tokenFor: eq.   
+     tAmp = tokenFor: amp.
+     tPipe = tokenFor: pipe.
+     tCir = tokenFor: cir.
 
+     tAmpAmp = tAmp,amp.
+     tPipePipe = tPipe,pipe.
      tLtEq = tLt,eq.
      tGtEq = tGt,eq.
      tleftShift = tLt,lt.
      trightShift = tGt,gt.
      tsRightShift = tGt,gt,gt. 
+     tEqEq = tEq,eq.
+     tEqEqEq = tEq,eq,eq.
+     tNotEq = texclamation,eq.
+     tNotEqEq = texclamation,eq,eq.
 
       leftparen = tokenFromChar: $(.
       rightparen =tokenFromChar: $).	
@@ -175,7 +188,34 @@ class JSGrammar = ExecutableGrammar (
       
       relationalExpression =
             shiftExpression, ((  tLtEq | tGtEq | tLt | tGt | instanceof | in) , shiftExpression)  star.
- 
+
+      relationalExpressionNoIn =
+            shiftExpression, ((  tLtEq | tGtEq | tLt | tGt | instanceof ) , shiftExpression)  star. 
+
+      equalityExpression =
+            relationalExpression, ((tEqEqEq | tEqEq | tNotEqEq | tNotEq ), relationalExpression) star.
+
+      equalityExpressionNoIn =
+            relationalExpressionNoIn, ((tEqEqEq | tEqEq | tNotEqEq | tNotEq ), relationalExpressionNoIn) star.
+
+      bitwiseANDExpression =
+           equalityExpression,(tAmp, equalityExpression) star.
+
+      bitwiseANDExpressionNoIn =
+           equalityExpressionNoIn,(tAmp, equalityExpressionNoIn) star.
+
+      bitwiseXORExpression =
+           bitwiseANDExpression,(tCir, bitwiseANDExpression) star.
+
+      bitwiseXORExpressionNoIn =
+           bitwiseANDExpressionNoIn,(tCir, bitwiseANDExpressionNoIn) star.
+
+      bitwiseORExpression =
+           bitwiseXORExpression,(tPipe, bitwiseXORExpression) star.
+
+      bitwiseORExpressionNoIn =
+           bitwiseXORExpressionNoIn,(tPipe, bitwiseXORExpressionNoIn) star.
+
       expression = primaryexpression .
 |
 )
@@ -289,6 +329,27 @@ binaryExpressionIdentifier: id = (
 		]
 )
 
+bitwiseANDExpression = (
+	^super bitwiseANDExpression 
+	                  wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#bitAnd
+		                                    first: first rest: rest ].
+)
+
+bitwiseORExpression = (
+	^super bitwiseORExpression 
+	                  wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#bitOr
+		                                    first: first rest: rest ].
+)
+
+bitwiseXORExpression = (
+	^super bitwiseXORExpression 
+	                  wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#bitXor
+		                                    first: first rest: rest ].
+)
+
 callExpression = (
 		^super callExpression 
 	                 wrapper: [:id :col | 
@@ -315,6 +376,20 @@ createNodeForBinaryExpression: type first: first rest: rest = (
 			                                  contents: {  binaryExpressionIdentifier: (next at: 1)  " (next at: 1) token".
 			                                                    current.
 			                                                    next at: 2. }]
+)
+
+equalityExpression = (
+	^super equalityExpression 
+	                 wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#equality
+		                                    first: first rest: rest ].
+)
+
+equalityExpressionNoIn = (
+	^super equalityExpressionNoIn
+	                 wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#equality
+		                                    first: first rest: rest ].
 )
 
 flattenArguments: args = (
@@ -459,6 +534,13 @@ postfixExpression = (
 
 relationalExpression = (
 	^super relationalExpression 
+	                 wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#relational
+		                                    first: first rest: rest ].
+)
+
+relationalExpressionNoIn = (
+	^super relationalExpressionNoIn 
 	                 wrapper: [:first :rest |   
 		                                createNodeForBinaryExpression:#relational
 		                                    first: first rest: rest ].

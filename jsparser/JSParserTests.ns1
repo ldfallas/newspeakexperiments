@@ -18,11 +18,107 @@ testAdditiveExpression1 = (
 )
 
 
+testBitAnd1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST bitwiseANDExpression
+                      parse: (streamFromString: 'x & y').   
+    expected:: 
+           tn: #bitAnd
+               contents: {
+                   $&.
+                   'x'.
+                   'y'.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testBitOr1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST bitwiseORExpression
+                      parse: (streamFromString: 'x | y').   
+    expected:: 
+           tn: #bitOr
+               contents: {
+                   $|.
+                   'x'.
+                   'y'.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testBitXor1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST bitwiseXORExpression
+                      parse: (streamFromString: 'x ^ y').   
+    expected:: 
+           tn: #bitXor
+               contents: {
+                   $^.
+                   'x'.
+                   'y'.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
 testEmptyObject = (
 
     | parsed |
     parsed:: objectParser parse: (streamFromString: '{ }').
     assert:[(parsed token) size = 3].
+)
+
+
+testEqualityExpression1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST equalityExpression
+                      parse: (streamFromString: 'x == y').   
+    expected:: 
+           tn: #equality
+               contents: {
+                   '=='.
+                   'x'.
+                   'y'.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testEqualityExpression2 = (
+
+    |parsed expected|
+    parsed:: parserWithAST equalityExpression
+                      parse: (streamFromString: 'x === y').   
+    expected:: 
+           tn: #equality
+               contents: {
+                   '==='.
+                   'x'.
+                   'y'.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testEqualityExpression3 = (
+
+    |parsed expected|
+    parsed:: parserWithAST equalityExpression
+                      parse: (streamFromString: 'x != y').   
+    expected:: 
+           tn: #equality
+               contents: {
+                   '!='.
+                   'x'.
+                   'y'.
+               }.
+   assert:[parsed sameAs: expected]. 
 )
 
 
