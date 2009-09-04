@@ -38,13 +38,27 @@ class JSGrammar = ExecutableGrammar (
 	plusSign = (char: $+).
 	digit = (charBetween: $0 and: $9).
 	dot = (char: $. ) .
+	lt = char: $<.
+	gt = char: $>.
+	eq = char: $=.
 	num = negSign opt, digit, digit star, dot opt,digit star, ((char: $e) | (char: $E)) opt, (plusSign | negSign) opt,digit star.
 	number = tokenFor: num.
 
+     tplusSign = tokenFor: plusSign.
+     tnegSign = tokenFor: negSign.
      tmodulo = tokenFor: modulo.
      tslash = tokenFor: slash.
      tstarChar = tokenFor: starChar.
      tdot = tokenFor:dot.
+     tLt = tokenFor: lt.
+     tGt = tokenFor: gt.
+     tEq = tokenFor: eq.
+
+     tLtEq = tLt,eq.
+     tGtEq = tGt,eq.
+     tleftShift = tLt,lt.
+     trightShift = tGt,gt.
+     tsRightShift = tGt,gt,gt. 
 
       leftparen = tokenFromChar: $(.
       rightparen =tokenFromChar: $).	
@@ -153,6 +167,15 @@ class JSGrammar = ExecutableGrammar (
       multiplicativeExpression = 
               unaryExpression, ((tstarChar | tslash | tmodulo), unaryExpression) star.     
 
+      additiveExpression = 
+              multiplicativeExpression, ((tplusSign | tnegSign), multiplicativeExpression) star. 
+
+      shiftExpression =  
+             additiveExpression,  ((tsRightShift | tleftShift |  trightShift), additiveExpression) star.
+      
+      relationalExpression =
+            shiftExpression, ((  tLtEq | tGtEq | tLt | tGt | instanceof | in) , shiftExpression)  star.
+ 
       expression = primaryexpression .
 |
 )
@@ -236,12 +259,34 @@ class JSGrammarWithAST = JSGrammar(
 |
 )
 ('as yet unclassified'
+additiveExpression = (
+	^super additiveExpression 
+	                  wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#additive
+		                                    first: first rest: rest ].
+)
+
 arguments = (
 		^super arguments wrapper: [:lp :args :rp | flattenArguments: args  ].
 )
 
 array = (
 	^super array wrapper: [:a | (a token at: 2)  ].
+)
+
+binaryExpressionIdentifier: id = (     
+	^(id respondsTo: #token) 
+	    ifTrue: [id token]
+	    ifFalse: [		   
+		 String withAll:
+		      (id inject: (OrderedCollection new) into: [:a :b |
+			       a addLast:( (b respondsTo: #token) ifTrue: [b token]
+			                             ifFalse: [b]
+			                            ) .
+			       a
+			 ]).
+		
+		]
 )
 
 callExpression = (
@@ -260,6 +305,16 @@ complexUnaryExpression = (
 		                                                     ifTrue: [op token]
 		                                                     ifFalse: [op] . 
 		                                            exp. }  ].
+)
+
+createNodeForBinaryExpression: type first: first rest: rest = (
+	^rest inject: first into: [ 
+			                         :current :next |
+			                              TestingAstNode
+			                                  name: type
+			                                  contents: {  binaryExpressionIdentifier: (next at: 1)  " (next at: 1) token".
+			                                                    current.
+			                                                    next at: 2. }]
 )
 
 flattenArguments: args = (
@@ -363,15 +418,9 @@ minusMinus = (
 
 multiplicativeExpression = (
 	^super multiplicativeExpression 
-	                  wrapper: [:first :rest |  
-		                                rest inject: first into: [ 
-			                                 :current :next |
-			                                 TestingAstNode
-			                                     name: #multiplicative
-			                                     contents: { (next at: 1) token.
-			                                                       current.
-			                                                       next at: 2. }.  
-			                     ]].
+	                  wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#multiplicative
+		                                    first: first rest: rest ].
 )
 
 null = (
@@ -406,6 +455,20 @@ postfixExpression = (
 			                                             o.
 			                                        }.
 			                    ] ]. 
+)
+
+relationalExpression = (
+	^super relationalExpression 
+	                 wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#relational
+		                                    first: first rest: rest ].
+)
+
+shiftExpression = (
+	^super shiftExpression 
+	                  wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#shift
+		                                    first: first rest: rest ].
 )
 
 simpleNewExpression = (

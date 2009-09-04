@@ -2,6 +2,22 @@ Newsqueak1
 'LangexplrExperiments'
 JSParserTests = TestCase (
 'as yet unclassified'
+testAdditiveExpression1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST additiveExpression
+                      parse: (streamFromString: 'x + 2').   
+    expected:: 
+           tn: #additive
+               contents: {
+                   $+.
+                   'x'.
+                   2.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
 testEmptyObject = (
 
     | parsed |
@@ -127,12 +143,12 @@ testMultiplicativeExpression1 = (
 
     |parsed expected|
     parsed:: parserWithAST multiplicativeExpression
-                      parse: (streamFromString: '12 * 2').   
+                      parse: (streamFromString: 'x * 2').   
     expected:: 
            tn: #multiplicative
                contents: {
                    $*.
-                   12.
+                   'x'.
                    2.
                }.
    assert:[parsed sameAs: expected]. 
@@ -267,6 +283,149 @@ testPrimaryExpression = (
     assert:[parsed = 'hola'].
     parsed::   parserWithAST parse: (streamFromString: '"hola2"').
     assert:[parsed = 'hola2'].
+)
+
+
+testRelationalExpression1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST relationalExpression
+                      parse: (streamFromString: 'x > 2').   
+    expected:: 
+           tn: #relational
+               contents: {
+                   $>.
+                   'x'.
+                   2.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testRelationalExpression2 = (
+
+    |parsed expected|
+    parsed:: parserWithAST relationalExpression
+                      parse: (streamFromString: 'x < 2').   
+    expected:: 
+           tn: #relational
+               contents: {
+                   $<.
+                   'x'.
+                   2.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testRelationalExpression3 = (
+
+    |parsed expected|
+    parsed:: parserWithAST relationalExpression
+                      parse: (streamFromString: 'x <= 2').   
+    expected:: 
+           tn: #relational
+               contents: {
+                   '<='.
+                   'x'.
+                   2.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testRelationalExpression4 = (
+
+    |parsed expected|
+    parsed:: parserWithAST relationalExpression
+                      parse: (streamFromString: 'x >= 2').   
+    expected:: 
+           tn: #relational
+               contents: {
+                   '>='.
+                   'x'.
+                   2.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testRelationalExpression5 = (
+
+    |parsed expected|
+    parsed:: parserWithAST relationalExpression
+                      parse: (streamFromString: 'x instanceof something').   
+    expected:: 
+           tn: #relational
+               contents: {
+                   #instanceof.
+                   'x'.
+                   'something'.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testRelationalExpression6 = (
+
+    |parsed expected|
+    parsed:: parserWithAST relationalExpression
+                      parse: (streamFromString: 'x in y').   
+    expected:: 
+           tn: #relational
+               contents: {
+                   'in'.
+                   'x'.
+                   'y'.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testShiftExpression1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST shiftExpression
+                      parse: (streamFromString: 'x << 2').   
+    expected:: 
+           tn: #shift
+               contents: {
+                   '<<'.
+                   'x'.
+                   2.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testShiftExpression2 = (
+    |parsed expected|
+    parsed:: parserWithAST shiftExpression
+                      parse: (streamFromString: 'x >> 2').   
+    expected:: 
+           tn: #shift
+               contents: {
+                   '>>'.
+                   'x'.
+                   2.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testShiftExpression3 = (
+
+    |parsed expected|
+    parsed:: parserWithAST shiftExpression
+                      parse: (streamFromString: 'x >>> 2').   
+    expected:: 
+           tn: #shift
+               contents: {
+                   '>>>'.
+                   'x'.
+                   2.
+               }.
+   assert:[parsed sameAs: expected]. 
 )
 
 
