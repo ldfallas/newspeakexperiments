@@ -15,7 +15,7 @@ class JSParser withParserLib: parserLibrary usingLib: platform =  (
 (
 
 class JSGrammar = ExecutableGrammar (
-"Experiment for JS grammar based on the description from http://www.json.org/fatfree.html "
+"Experiment for JS grammar based on the description from http://www.ecma-international.org/publications/standards/Ecma-262.htm"
 |
       doubleQuote = (char: $").
       backslash = (char: $\).
@@ -36,6 +36,8 @@ class JSGrammar = ExecutableGrammar (
 	pipe = char: $|.
       amp = char: $&.
       cir = char: $^.
+      question = char: $?.
+      colon = char: $:.
 	
 	negSign = (char: $-).
 	plusSign = (char: $+).
@@ -47,6 +49,8 @@ class JSGrammar = ExecutableGrammar (
 	num = negSign opt, digit, digit star, dot opt,digit star, ((char: $e) | (char: $E)) opt, (plusSign | negSign) opt,digit star.
 	number = tokenFor: num.
 
+     tQuestion = tokenFor: question.
+     tColon = tokenFor: colon.
      tplusSign = tokenFor: plusSign.
      tnegSign = tokenFor: negSign.
      tmodulo = tokenFor: modulo.
@@ -60,7 +64,13 @@ class JSGrammar = ExecutableGrammar (
      tAmp = tokenFor: amp.
      tPipe = tokenFor: pipe.
      tCir = tokenFor: cir.
-
+     tSlash = tokenFor: slash.
+     
+     tStarEq = tstarChar,eq.
+     tModEq = tmodulo,eq.
+     tSlashEq = tSlash,eq.
+     tPlusEq = tplusSign,eq.
+     tMinusEq = tnegSign,eq.
      tAmpAmp = tAmp,amp.
      tPipePipe = tPipe,pipe.
      tLtEq = tLt,eq.
@@ -72,15 +82,21 @@ class JSGrammar = ExecutableGrammar (
      tEqEqEq = tEq,eq,eq.
      tNotEq = texclamation,eq.
      tNotEqEq = texclamation,eq,eq.
+     tleftShiftEq = tleftShift,eq.
+     trightShiftEq = trightShift,eq.
+     tsRightShiftEq = tsRightShift,eq.
+     tAmpEq = tAmp,eq.
+     tPipeEq = tPipe,eq.
+     tCirEq = tCir,eq.
+     
 
       leftparen = tokenFromChar: $(.
       rightparen =tokenFromChar: $).	
 	
       leftbrace = tokenFromChar: ${.
       rightbrace =tokenFromChar: $}.
-      colon = tokenFromChar: $:.
       comma = tokenFromChar: $,.
-      definition = string,colon,value.
+      definition = string,tColon,value.
       obj =  leftbrace,  (definition starSeparatedBy: comma),rightbrace.
       object = tokenFor: obj.
 
@@ -216,6 +232,35 @@ class JSGrammar = ExecutableGrammar (
       bitwiseORExpressionNoIn =
            bitwiseXORExpressionNoIn,(tPipe, bitwiseXORExpressionNoIn) star.
 
+      logicalAndExpression = 
+           bitwiseORExpression, (tAmpAmp,bitwiseORExpression) star.
+
+      logicalAndExpressionNoIn = 
+           bitwiseORExpressionNoIn, (tAmpAmp,bitwiseORExpressionNoIn) star.
+
+      logicalOrExpression = 
+           logicalAndExpression, (tPipePipe,logicalAndExpression) star.
+
+      logicalOrExpressionNoIn = 
+           logicalAndExpressionNoIn, (tPipePipe,logicalAndExpressionNoIn) star.
+
+      assignmentOperator = 
+              tEq | tStarEq | tSlashEq | tModEq | tPlusEq | tMinusEq |
+              tleftShiftEq | tsRightShiftEq | trightShiftEq | tAmpEq | tPipeEq |
+              tCirEq.
+ 
+      conditionalExpression =
+            logicalOrExpression, (tQuestion, assignmentExpression,tColon,assignmentExpression) opt.
+
+      assignmentExpression =    
+           conditionalExpression, (assignmentOperator,conditionalExpression) star.
+
+      conditionalExpressionNoIn =
+            logicalOrExpressionNoIn, (tQuestion, assignmentExpressionNoIn,tColon,assignmentExpressionNoIn) opt.
+
+      assignmentExpressionNoIn =    
+           conditionalExpressionNoIn, (assignmentOperator,conditionalExpressionNoIn) star.
+
       expression = primaryexpression .
 |
 )
@@ -314,6 +359,20 @@ array = (
 	^super array wrapper: [:a | (a token at: 2)  ].
 )
 
+assignmentExpression = (
+	^super assignmentExpression 
+	                  wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#assign
+		                                    first: first rest: rest ].
+)
+
+assignmentExpressionNoIn = (
+	^super assignmentExpressionNoIn 
+	                  wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#assign
+		                                    first: first rest: rest ].
+)
+
 binaryExpressionIdentifier: id = (     
 	^(id respondsTo: #token) 
 	    ifTrue: [id token]
@@ -336,6 +395,13 @@ bitwiseANDExpression = (
 		                                    first: first rest: rest ].
 )
 
+bitwiseANDExpressionNoIn = (
+	^super bitwiseANDExpressionNoIn 
+	                  wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#bitAnd
+		                                    first: first rest: rest ].
+)
+
 bitwiseORExpression = (
 	^super bitwiseORExpression 
 	                  wrapper: [:first :rest |   
@@ -343,8 +409,22 @@ bitwiseORExpression = (
 		                                    first: first rest: rest ].
 )
 
+bitwiseORExpressionNoIn = (
+	^super bitwiseORExpressionNoIn
+	                  wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#bitOr
+		                                    first: first rest: rest ].
+)
+
 bitwiseXORExpression = (
 	^super bitwiseXORExpression 
+	                  wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#bitXor
+		                                    first: first rest: rest ].
+)
+
+bitwiseXORExpressionNoIn = (
+	^super bitwiseXORExpressionNoIn
 	                  wrapper: [:first :rest |   
 		                                createNodeForBinaryExpression:#bitXor
 		                                    first: first rest: rest ].
@@ -366,6 +446,30 @@ complexUnaryExpression = (
 		                                                     ifTrue: [op token]
 		                                                     ifFalse: [op] . 
 		                                            exp. }  ].
+)
+
+conditionalExpression = (
+	^super conditionalExpression 
+	                 wrapper: [:condition :col |   
+		                             (col = nil) 
+		                                 ifTrue: [condition]
+		                                 ifFalse: [
+                                                  TestingAstNode name: #conditional
+		                                               contents: { condition. 
+		                                                                 col at: 2. 
+		                                                                 col at: 4. }]].
+)
+
+conditionalExpressionNoIn = (
+	^super conditionalExpressionNoIn 
+	                 wrapper: [:condition :col |   
+		                             (col = nil) 
+		                                 ifTrue: [condition]
+		                                 ifFalse: [
+                                                  TestingAstNode name: #conditional
+		                                               contents: { condition. 
+		                                                                 col at: 2. 
+		                                                                 col at: 4. }]].
 )
 
 createNodeForBinaryExpression: type first: first rest: rest = (
@@ -474,6 +578,34 @@ identifier  = (
 	^super identifier wrapper: [:t :k |  (flattenCharCollectionToString: (k token  ))].
 )
 
+logicalAndExpression = (
+	^super logicalAndExpression 
+	                  wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#and
+		                                    first: first rest: rest ].
+)
+
+logicalAndExpressionNoIn = (
+	^super logicalAndExpressionNoIn 
+	                  wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#and
+		                                    first: first rest: rest ].
+)
+
+logicalOrExpression = (
+	^super logicalOrExpression 
+	                  wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#or
+		                                    first: first rest: rest ].
+)
+
+logicalOrExpressionNoIn = (
+	^super logicalOrExpressionNoIn 
+	                  wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#or
+		                                    first: first rest: rest ].
+)
+
 memberexpression = (
 	^super memberexpression 
 	                  wrapper: [:id :col | 
@@ -573,6 +705,14 @@ simpleNewMemberExpression = (
 string  = (
 	^super string wrapper: 
 	       [:t | flattenCollectedString: (t token at: 2)].
+)
+
+tAmpAmp = (
+	^super tAmpAmp wrapper: [:f :s | '&&'].
+)
+
+tPipePipe = (
+	^super tPipePipe wrapper: [:f :s | '||'].
 )
 
 this = (

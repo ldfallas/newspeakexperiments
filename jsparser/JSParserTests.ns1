@@ -66,6 +66,22 @@ testBitXor1 = (
 )
 
 
+testConditional1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST conditionalExpression
+                      parse: (streamFromString: 'x ? y : z').   
+    expected:: 
+           tn: #conditional
+               contents: {
+                   'x'.
+                   'y'.
+                   'z'.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
 testEmptyObject = (
 
     | parsed |
@@ -145,6 +161,38 @@ testFunctionExpression = (
     assert:[parsed name = #function].
     assert:[(parsed contents at: 1) = nil].
     assert:[((parsed contents at: 2) at: 1) = 'x'].
+)
+
+
+testLogicalAnd1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST logicalAndExpression
+                      parse: (streamFromString: 'x && y').   
+    expected:: 
+           tn: #and
+               contents: {
+                   '&&'.
+                   'x'.
+                   'y'.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testLogicalOr1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST logicalOrExpression
+                      parse: (streamFromString: 'x || y').   
+    expected:: 
+           tn: #or
+               contents: {
+                   '||'.
+                   'x'.
+                   'y'.
+               }.
+   assert:[parsed sameAs: expected]. 
 )
 
 
