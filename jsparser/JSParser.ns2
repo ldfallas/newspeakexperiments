@@ -38,6 +38,7 @@ class JSGrammar = ExecutableGrammar (
       cir = char: $^.
       question = char: $?.
       colon = char: $:.
+      semicolon = char: $;.
 	
 	negSign = (char: $-).
 	plusSign = (char: $+).
@@ -65,7 +66,8 @@ class JSGrammar = ExecutableGrammar (
      tPipe = tokenFor: pipe.
      tCir = tokenFor: cir.
      tSlash = tokenFor: slash.
-     
+     tSemicolon = tokenFor: semicolon.
+
      tStarEq = tstarChar,eq.
      tModEq = tmodulo,eq.
      tSlashEq = tSlash,eq.
@@ -169,7 +171,9 @@ class JSGrammar = ExecutableGrammar (
                                   ( leftbracket, expression, rightbracket) | 
                                   ( tdot, identifier)  ) star.
       simpleCallExpression = memberexpression , arguments.
-      arguments = leftparen , (expression, (comma, expression) star) opt, rightparen.
+      arguments = leftparen ,
+                          (assignmentExpression, (comma, assignmentExpression) star) opt, 
+                          rightparen.
 
       newExpression = memberexpression | simpleNewMemberExpression.
       simpleNewMemberExpression = tnew, memberexpression.
@@ -261,7 +265,23 @@ class JSGrammar = ExecutableGrammar (
       assignmentExpressionNoIn =    
            conditionalExpressionNoIn, (assignmentOperator,conditionalExpressionNoIn) star.
 
-      expression = primaryexpression .
+      expression = assignmentExpression, (comma , assignmentExpression) star.
+
+      expressionNoIn = assignmentExpressionNoIn, (comma , assignmentExpressionNoIn) star.
+
+
+      statement = block,variableStatement.
+ 
+      block = leftbracket, statementList , rightbracket.
+
+      statementList = statement star.
+      variableStatement = var, variableDeclarationList, tSemicolon.
+
+      variableDeclarationList = (variableDeclaration plusSeparatedBy: comma). 
+      variableDeclaration = identifier, (tEq,assignmentExpression) opt.
+
+      variableDeclarationListNoIn = (variableDeclarationNoIn plusSeparatedBy: comma). 
+      variableDeclarationNoIn = identifier, (tEq,assignmentExpressionNoIn) opt.
 |
 )
 ('as yet unclassified'
@@ -496,6 +516,20 @@ equalityExpressionNoIn = (
 		                                    first: first rest: rest ].
 )
 
+expression = (
+	^super expression 
+	                wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#comma
+		                                first: first rest: rest ].
+)
+
+expressionNoIn = (
+	^super expressionNoIn 
+	                wrapper: [:first :rest |   
+		                                createNodeForBinaryExpression:#comma
+		                                first: first rest: rest ].
+)
+
 flattenArguments: args = (
 	|col| 
       
@@ -616,7 +650,7 @@ memberexpression = (
 )
 
 messageSelector = (
-	^super arguments wrapper: [:lp :args :rp | flattenArguments: args].
+	^ super variableStatement 
 )
 
 minusMinus = (

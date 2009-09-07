@@ -146,6 +146,34 @@ testEscapedQuoteStringParsing = (
 )
 
 
+testExpressionSequence1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST expression
+                      parse: (streamFromString: 'x').   
+    expected:: 'x'.
+    assert:[parsed sameAs: expected]. 
+    
+)
+
+
+testExpressionSequence2 = (
+
+    |parsed expected|
+    parsed:: parserWithAST expression
+                      parse: (streamFromString: 'x , y').   
+    expected:: 
+           tn: #comma
+               contents: {
+                   $,.
+                   'x'.
+                   'y'.
+               }.
+   assert:[parsed sameAs: expected]. 
+    
+)
+
+
 testFloatNumberParsing = (
 
    | result |
@@ -771,6 +799,34 @@ testUnaryExpression7 = (
                contents: {
                    $!.
                    'x'.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testVarStatement1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST variableStatement
+                      parse: (streamFromString: 'var x ;').   
+    expected:: 
+           tn: #vardeclarations
+               contents: {
+                   { tn: #vardeclaration contents: { 'x'. } }.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testVarStatement2 = (
+
+   |parsed expected|
+    parsed:: parserWithAST variableStatement
+                      parse: (streamFromString: 'var xy = 100;').   
+    expected:: 
+           tn: #vardeclarations
+               contents: {
+                   { tn: #vardeclaration contents: { 'xy'. 100. } }.
                }.
    assert:[parsed sameAs: expected]. 
 )
