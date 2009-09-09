@@ -149,7 +149,7 @@ class JSGrammar = ExecutableGrammar (
   
       literal  = null | ttrue | tfalse | number | string.
 
-      primaryexpression  = this | identifier | literal | array | object.
+      primaryexpression  = this |  literal | identifier | array | object.
 
       functionexpression = function , identifier opt, 
                                        leftparen,formalparamlist, rightparen ,
@@ -270,9 +270,10 @@ class JSGrammar = ExecutableGrammar (
       expressionNoIn = assignmentExpressionNoIn, (comma , assignmentExpressionNoIn) star.
 
 
-      statement = block | variableStatement | emptyStatement | expressionStatement.
+      statement = block | variableStatement | emptyStatement | expressionStatement |
+                          ifStatement.
  
-      block = leftbracket, statementList , rightbracket.
+      block = leftbrace, statementList , rightbrace.
 
       statementList = statement star.
       variableStatement = var, variableDeclarationList, tSemicolon.
@@ -286,6 +287,8 @@ class JSGrammar = ExecutableGrammar (
       emptyStatement = tSemicolon.
 
       expressionStatement = (((function | leftbrace) not) & expression), tSemicolon.
+
+      ifStatement = if, leftparen,expression,rightparen,statement,(else,statement) opt.
 |
 )
 ('as yet unclassified'
@@ -452,6 +455,13 @@ bitwiseXORExpressionNoIn = (
 	                  wrapper: [:first :rest |   
 		                                createNodeForBinaryExpression:#bitXor
 		                                    first: first rest: rest ].
+)
+
+block = (
+	^super block 
+	                  wrapper: [:lb :statements :rb |   
+		                                TestingAstNode name: #block
+		                                    contents: (statements asArray). ].
 )
 
 callExpression = (
@@ -623,6 +633,19 @@ identifier  = (
 	^super identifier wrapper: [:t :k |  (flattenCharCollectionToString: (k token  ))].
 )
 
+ifStatement = (
+	^super ifStatement 
+	                  wrapper: [:if :lp :condition :rp :thenStatement :elseCol |   
+		                                (elseCol = nil)
+		                                         ifTrue: [ TestingAstNode name: #if 
+			                                                     contents: { condition. thenStatement.} ]
+		                                         ifFalse: [ TestingAstNode name: #if 
+			                                                     contents: { condition. 
+			                                                                       thenStatement.
+			                                                                       elseCol at: 2.} ]
+		                         ].
+)
+
 logicalAndExpression = (
 	^super logicalAndExpression 
 	                  wrapper: [:first :rest |   
@@ -792,12 +815,12 @@ variableStatement = (
 )
 
 'primitive'
-tfalse  = (
-	^super tfalse wrapper: [:o | false].
+tfalse = (
+	^super tfalse   wrapper: [:f | false].
 )
 
 ttrue = (
-	^super ttrue wrapper: [:o | true].
+	^super ttrue   wrapper: [:t | true].
 )
 
 'complex'

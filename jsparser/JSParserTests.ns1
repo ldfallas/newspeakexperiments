@@ -211,6 +211,23 @@ testFunctionExpression = (
 )
 
 
+testIfStatement1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST ifStatement
+                      parse: (streamFromString: 'if(true) { } else { }').   
+    expected:: 
+           tn: #if
+               contents: {
+                   true.
+                   tn: #block contents: {}.
+                   tn: #block contents: {}.
+               }.
+   assert:[parsed sameAs: expected]. 
+    
+)
+
+
 testLogicalAnd1 = (
 
     |parsed expected|
