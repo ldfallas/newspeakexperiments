@@ -161,13 +161,32 @@ testExpressionSequence2 = (
 
     |parsed expected|
     parsed:: parserWithAST expression
-                      parse: (streamFromString: 'x , y').   
+                      parse: (streamFromString: 'x,y').   
     expected:: 
            tn: #comma
                contents: {
                    $,.
                    'x'.
                    'y'.
+               }.
+   assert:[parsed sameAs: expected]. 
+    
+)
+
+
+testExpressionStatement1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST expressionStatement
+                      parse: (streamFromString: 'foo(1, 2 ,3);').   
+    expected:: 
+           tn: #expressionStatement
+               contents: {
+                   tn: #call
+                     contents: {
+                          'foo'.
+                          {1. 2. 3.}.
+                     }.
                }.
    assert:[parsed sameAs: expected]. 
     
@@ -812,7 +831,7 @@ testVarStatement1 = (
     expected:: 
            tn: #vardeclarations
                contents: {
-                   { tn: #vardeclaration contents: { 'x'. } }.
+                    tn: #vardeclaration contents: { 'x'. } .
                }.
    assert:[parsed sameAs: expected]. 
 )
@@ -826,7 +845,23 @@ testVarStatement2 = (
     expected:: 
            tn: #vardeclarations
                contents: {
-                   { tn: #vardeclaration contents: { 'xy'. 100. } }.
+                    tn: #vardeclaration contents: { 'xy'. 100. } .
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testVarStatement3 = (
+
+   |parsed expected|
+    parsed:: parserWithAST variableStatement
+                      parse: (streamFromString: 'var xy = 100,w,j = 3;').   
+    expected:: 
+           tn: #vardeclarations
+               contents: {
+                    tn: #vardeclaration contents: { 'xy'. 100. } .
+                    tn: #vardeclaration contents: { 'w'. } .
+                    tn: #vardeclaration contents: { 'j'. 3. } .
                }.
    assert:[parsed sameAs: expected]. 
 )

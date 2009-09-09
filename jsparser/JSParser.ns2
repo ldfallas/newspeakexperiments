@@ -181,7 +181,7 @@ class JSGrammar = ExecutableGrammar (
       plusPlus = plusSign,plusSign.
       minusMinus = negSign,negSign.
 
-      leftHandSideExpression = newExpression | callExpression.
+      leftHandSideExpression = callExpression | newExpression  .
       postfixExpression = leftHandSideExpression , 
                                            ((plusPlus | minusMinus) star).
 
@@ -270,7 +270,7 @@ class JSGrammar = ExecutableGrammar (
       expressionNoIn = assignmentExpressionNoIn, (comma , assignmentExpressionNoIn) star.
 
 
-      statement = block,variableStatement.
+      statement = block | variableStatement | emptyStatement | expressionStatement.
  
       block = leftbracket, statementList , rightbracket.
 
@@ -282,6 +282,10 @@ class JSGrammar = ExecutableGrammar (
 
       variableDeclarationListNoIn = (variableDeclarationNoIn plusSeparatedBy: comma). 
       variableDeclarationNoIn = identifier, (tEq,assignmentExpressionNoIn) opt.
+       
+      emptyStatement = tSemicolon.
+
+      expressionStatement = (((function | leftbrace) not) & expression), tSemicolon.
 |
 )
 ('as yet unclassified'
@@ -530,6 +534,13 @@ expressionNoIn = (
 		                                first: first rest: rest ].
 )
 
+expressionStatement = (
+	^super expressionStatement 
+	                  wrapper: [:n :expression :sc |   
+		                                TestingAstNode name: #expressionStatement
+		                                    contents: { expression }. ].
+)
+
 flattenArguments: args = (
 	|col| 
       
@@ -751,6 +762,33 @@ tPipePipe = (
 
 this = (
 	^super this wrapper: [:o | #this].
+)
+
+variableDeclaration = (
+		^super variableDeclaration 
+	                  wrapper: [:varName  :optionalInitialValue |   
+		                                TestingAstNode name: #vardeclaration
+		                                         contents: ((optionalInitialValue = nil) 
+		                                                                 ifTrue: [{ varName.  }]
+		                                                                 ifFalse: [{ varName. (optionalInitialValue at: 2)}]
+		) ]
+)
+
+variableDeclarationNoIn = (
+		^super variableDeclarationNoIn 
+	                  wrapper: [:varName  :optionalInitialValue |   
+		                                TestingAstNode name: #vardeclaration
+		                                         contents: ((optionalInitialValue = nil) 
+		                                                                 ifTrue: [{ varName.  }]
+		                                                                 ifFalse: [{ varName. (optionalInitialValue at: 2)}]
+		) ]
+)
+
+variableStatement = (
+		^super variableStatement 
+	                  wrapper: [:v :declarationList :sc |   
+		                                TestingAstNode name: #vardeclarations 
+		                                         contents: ( declarationList asArray  ) ]
 )
 
 'primitive'
