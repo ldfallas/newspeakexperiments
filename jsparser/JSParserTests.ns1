@@ -82,6 +82,21 @@ testConditional1 = (
 )
 
 
+testDoStatement = (
+
+    |parsed expected|
+    parsed:: parserWithAST iterationStatement
+                      parse: (streamFromString: 'do { } while(true);').   
+    expected:: 
+           tn: #do
+               contents: {
+                   tn: #block contents: { }.
+                   true.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
 testEmptyObject = (
 
     | parsed |
@@ -198,6 +213,91 @@ testFloatNumberParsing = (
    | result |
      result:: numberParser parse: (streamFromString: '234.32;').
      assert: [ (flattenCharCollectionToString: result token) = '234.32' ].
+)
+
+
+testForInStatement1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST iterationStatement
+                      parse: (streamFromString: 'for ( var x in col) {}').   
+    expected:: 
+           tn: #forIn
+               contents: {
+                   tn: #vardeclarations contents: {
+                              tn: #vardeclaration contents: { 'x'.  } . }.
+                   'col'.
+                   tn: #block contents: {}.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testForInStatementNoVar1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST iterationStatement
+                      parse: (streamFromString: 'for (  x in col) {}').   
+    expected:: 
+           tn: #forIn
+               contents: {
+                   'x'.
+                   'col'.
+                   tn: #block contents: {}.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testForStatement1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST iterationStatement
+                      parse: (streamFromString: 'for (var x = 0; x < 10;x++) {}').   
+    expected:: 
+           tn: #for
+               contents: {
+                   tn: #vardeclarations contents: {
+                              tn: #vardeclaration contents: { 'x'. 0. } . }.
+                   tn: #relational contents: {  $<.  'x'.  10.  }.
+                   tn: #postfix   contents: {   $+.  'x'.  }.
+                   tn: #block contents: {}.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testForStatement2 = (
+
+    |parsed expected|
+    parsed:: parserWithAST iterationStatement
+                      parse: (streamFromString: 'for (; x < 10;x++) {}').   
+    expected:: 
+           tn: #for
+               contents: {
+                   nil.
+                   tn: #relational contents: {  $<.  'x'.  10.  }.
+                   tn: #postfix   contents: {   $+.  'x'.  }.
+                   tn: #block contents: {}.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testForStatementNoVar1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST iterationStatement
+                      parse: (streamFromString: 'for ( x = 0; x < 10;x++) {}').   
+    expected:: 
+           tn: #for
+               contents: {
+                   tn: #assign contents: { $=. 'x'. 0. }.
+                   tn: #relational contents: {  $<.  'x'.  10.  }.
+                   tn: #postfix   contents: {   $+.  'x'.  }.
+                   tn: #block contents: {}.
+               }.
+   assert:[parsed sameAs: expected]. 
 )
 
 
@@ -879,6 +979,21 @@ testVarStatement3 = (
                     tn: #vardeclaration contents: { 'xy'. 100. } .
                     tn: #vardeclaration contents: { 'w'. } .
                     tn: #vardeclaration contents: { 'j'. 3. } .
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testWhileStatement1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST whileStatement
+                      parse: (streamFromString: 'while ( x < 10) {}').   
+    expected:: 
+           tn: #while
+               contents: {                   
+                   tn: #relational contents: {  $<.  'x'.  10.  }.             
+                   tn: #block contents: {}.
                }.
    assert:[parsed sameAs: expected]. 
 )

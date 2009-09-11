@@ -271,8 +271,8 @@ class JSGrammar = ExecutableGrammar (
 
 
       statement = block | variableStatement | emptyStatement | expressionStatement |
-                          ifStatement.
- 
+                          ifStatement | iterationStatement.
+  
       block = leftbrace, statementList , rightbrace.
 
       statementList = statement star.
@@ -289,6 +289,41 @@ class JSGrammar = ExecutableGrammar (
       expressionStatement = (((function | leftbrace) not) & expression), tSemicolon.
 
       ifStatement = if, leftparen,expression,rightparen,statement,(else,statement) opt.
+
+      iterationStatement = doStatement | forStatement | forStatementNoVar |  
+                                        whileStatement | forInStatement | forInStatementNoVar.
+
+      doStatement = do, statement, while, leftparen,expression,rightparen,tSemicolon.
+
+       forStatement = for, leftparen, 
+                                       var, variableDeclarationListNoIn ,
+                                       tSemicolon,
+                                       (expression opt),
+                                       tSemicolon,
+                                       (expression opt),
+                                       rightparen, statement.
+
+      forStatementNoVar = for, leftparen, 
+                                       (expression opt),
+                                       tSemicolon,
+                                       (expression opt),
+                                       tSemicolon,
+                                       (expression opt),
+                                       rightparen, statement.
+
+
+       forInStatement = for, leftparen, 
+                                       var, variableDeclarationListNoIn ,
+                                       in,
+                                       expression ,
+                                       rightparen, statement.
+
+      forInStatementNoVar = for, leftparen, 
+                                       leftHandSideExpression ,
+                                       in,
+                                       expression ,
+                                       rightparen, statement.
+      whileStatement = while,leftparen,expression,rightparen,statement.
 |
 )
 ('as yet unclassified'
@@ -516,6 +551,13 @@ createNodeForBinaryExpression: type first: first rest: rest = (
 			                                                    next at: 2. }]
 )
 
+doStatement = (
+	^super doStatement 
+	                  wrapper: [:do :statement :while :lp :condition :rp :sc |   
+		                               TestingAstNode name: #do
+		                                  contents: { statement. condition }.]
+)
+
 equalityExpression = (
 	^super equalityExpression 
 	                 wrapper: [:first :rest |   
@@ -613,6 +655,42 @@ flatteningCollectedString: collection to: newCollection = (
 	          ifTrue: [ flatteningCollectedString: value to: newCollection ]
 	          ifFalse: [value ~= nil ifTrue: [newCollection addLast: value]]].
     ^newCollection
+)
+
+forInStatement = (
+	^super forInStatement 
+	                  wrapper: [:for :lp :var :initial :in :col :rp :statement |   
+		                               TestingAstNode name: #forIn
+		                                  contents: {
+		                                           TestingAstNode name: #vardeclarations contents: (initial  asArray).
+		                                            col. statement. }.]
+)
+
+forInStatementNoVar = (
+	^super forInStatementNoVar 
+	                  wrapper: [:for :lp  :initial :in :col :rp :statement|   
+		                               TestingAstNode name: #forIn
+		                                  contents: {
+ 		                                            initial.
+		                                            col. statement. }.]
+)
+
+forStatement = (
+	^super forStatement 
+	                  wrapper: [:for :lp :var :initial :sc1 :condition :sc2 :inc :rp :statement |   
+		                               TestingAstNode name: #for
+		                                  contents: {
+		                                           TestingAstNode name: #vardeclarations contents: (initial  asArray).
+		                                            condition. inc. statement. }.]
+)
+
+forStatementNoVar = (
+	^super forStatementNoVar 
+	                  wrapper: [:for :lp  :initial :sc1 :condition :sc2 :inc :rp :statement |   
+		                               TestingAstNode name: #for
+		                                  contents: {
+ 		                                            initial.
+		                                            condition. inc. statement. }.]
 )
 
 functionexpression = (
@@ -812,6 +890,15 @@ variableStatement = (
 	                  wrapper: [:v :declarationList :sc |   
 		                                TestingAstNode name: #vardeclarations 
 		                                         contents: ( declarationList asArray  ) ]
+)
+
+whileStatement = (
+	^super whileStatement 
+	                  wrapper: [:while :lp  :condition :rp :statement |   
+		                               TestingAstNode name: #while
+		                                  contents: {
+ 		                                            
+		                                            condition.  statement. }.]
 )
 
 'primitive'
