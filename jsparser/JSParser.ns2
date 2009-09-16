@@ -271,7 +271,7 @@ class JSGrammar = ExecutableGrammar (
 
 
       statement = block | variableStatement | emptyStatement | expressionStatement |
-                          ifStatement | iterationStatement.
+                          ifStatement | iterationStatement | withStatement | switchStatement.
   
       block = leftbrace, statementList , rightbrace.
 
@@ -324,6 +324,24 @@ class JSGrammar = ExecutableGrammar (
                                        expression ,
                                        rightparen, statement.
       whileStatement = while,leftparen,expression,rightparen,statement.
+
+      continueStatement = continue, (identifier opt), tSemicolon.
+
+      breakStatement = continue, (identifier opt), tSemicolon.
+
+      returnStatement = return, (expression opt), tSemicolon.
+
+      withStatement = with, leftparen, expression ,rightparen, statement.
+  
+       switchStatement = switch ,leftparen,expression,rightparen, clauseBlock.
+
+       clauseBlock = leftbrace,(clause star),(defaultClause opt),rightbrace.
+
+       clause = case, expression, tColon,statementList.
+         
+        defaultClause = default,tColon, statementList.
+
+
 |
 )
 ('as yet unclassified'
@@ -355,10 +373,18 @@ class TestingAstNode name: theName contents: theContent = (
 )
 ('as yet unclassified'
 private compare: a with: b = (
-      |t|
+      |t i|
 	(a respondsTo:  #sameAs:)
 			ifTrue: [t:: a sameAs: b]
-			ifFalse: [t:: a = b] .
+			ifFalse: [
+				 (a class name = #Array)
+				   ifTrue: [
+					  i:: 0.
+					  t:: a inject: true into: [:total :current | 
+						                          i:: i+1.
+						                          total and: [compare: current 
+							                                          with: (b at: i) ] ]]
+				   ifFalse: [ t:: a = b]] .
      t ifFalse: [break].
      ^t.
 )
@@ -506,6 +532,20 @@ callExpression = (
 		                                           ].
 )
 
+clause = (
+	^super clause 
+	                  wrapper: [:case :expr :sc :statements |   
+		                               TestingAstNode name: #case 
+		                                  contents: {expr. (statements asArray) } ]
+)
+
+clauseBlock = (
+	^super clauseBlock 
+	                  wrapper: [:lb :clauses :default :rb |   
+		                               default ifNotNil: [clauses addLast: default].
+		                               clauses]
+)
+
 complexUnaryExpression = (
 	^super complexUnaryExpression 
 	             wrapper: [:op :exp | 
@@ -549,6 +589,12 @@ createNodeForBinaryExpression: type first: first rest: rest = (
 			                                  contents: {  binaryExpressionIdentifier: (next at: 1)  " (next at: 1) token".
 			                                                    current.
 			                                                    next at: 2. }]
+)
+
+defaultClause = (
+	^super defaultClause 
+	                  wrapper: [:default :sc :statements |   
+		                               TestingAstNode name: #defaultCase contents: (statements asArray)]
 )
 
 doStatement = (
@@ -851,6 +897,14 @@ simpleNewMemberExpression = (
 string  = (
 	^super string wrapper: 
 	       [:t | flattenCollectedString: (t token at: 2)].
+)
+
+switchStatement = (
+	^super switchStatement 
+	                  wrapper: [:switch :lp :expression :rp :clauses |   
+		                               clauses addFirst: expression.
+		                               TestingAstNode name: #switch
+		                                  contents: (clauses asArray) .]
 )
 
 tAmpAmp = (

@@ -840,6 +840,29 @@ testSimpleStringParsing = (
 )
 
 
+testSwitchStatement1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: 'switch ( x ) {
+                                                                   case 1: print("a");
+                                                                   default: print("b");
+                                                               }').   
+    expected:: 
+           tn: #switch
+               contents: {
+                   'x'.
+                   tn: #case contents: { 1. 
+                              { tn:#expressionStatement 
+                                 contents: {tn: #call contents: { 'print'. { 'a'} }}}}.
+                   tn: #defaultCase contents: {  
+                           tn:#expressionStatement 
+                                 contents: { tn: #call contents: { 'print'. { 'b'} }}}.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
 testUnaryExpression1 = (
 
     |parsed expected|
