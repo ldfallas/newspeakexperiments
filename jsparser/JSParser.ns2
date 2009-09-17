@@ -271,7 +271,8 @@ class JSGrammar = ExecutableGrammar (
 
 
       statement = block | variableStatement | emptyStatement | expressionStatement |
-                          ifStatement | iterationStatement | withStatement | switchStatement.
+                          ifStatement | iterationStatement | withStatement | switchStatement |
+                          labelledStatement | tryStatement | throwStatement.
   
       block = leftbrace, statementList , rightbrace.
 
@@ -341,7 +342,17 @@ class JSGrammar = ExecutableGrammar (
          
         defaultClause = default,tColon, statementList.
 
+        labelledStatement = identifier,tColon,statement.
+        
+        throwStatement = throw,expression,tSemicolon.
+ 
+        tryStatement = try, block, (catchBlock opt), (finallyBlock opt).
 
+         catchBlock = catch, leftparen, identifier,rightparen, block.
+
+         finallyBlock = finally, block.
+
+        
 |
 )
 ('as yet unclassified'
@@ -532,6 +543,13 @@ callExpression = (
 		                                           ].
 )
 
+catchBlock = (
+	^super catchBlock 
+	                  wrapper: [:catch :lp :var :rp :block |   
+		                               TestingAstNode name: #catch
+		                                  contents: {  var. block. }.]
+)
+
 clause = (
 	^super clause 
 	                  wrapper: [:case :expr :sc :statements |   
@@ -637,6 +655,13 @@ expressionStatement = (
 	                  wrapper: [:n :expression :sc |   
 		                                TestingAstNode name: #expressionStatement
 		                                    contents: { expression }. ].
+)
+
+finallyBlock = (
+	^super finallyBlock 
+	                  wrapper: [:finally :block |   
+		                               TestingAstNode name: #finally
+		                                  contents: {   block. }.]
 )
 
 flattenArguments: args = (
@@ -768,6 +793,12 @@ ifStatement = (
 			                                                                       thenStatement.
 			                                                                       elseCol at: 2.} ]
 		                         ].
+)
+
+labelledStatement = (
+	^super labelledStatement 
+	                  wrapper: [:label :sc :statement |   
+		                                TestingAstNode name: #label contents: {label. statement.}. ].
 )
 
 logicalAndExpression = (
@@ -917,6 +948,19 @@ tPipePipe = (
 
 this = (
 	^super this wrapper: [:o | #this].
+)
+
+throwStatement = (
+	^super throwStatement 
+	                  wrapper: [:throw :exp :sc |   
+		                                TestingAstNode name: #throw contents: {exp}. ].
+)
+
+tryStatement = (
+	^super tryStatement 
+	                  wrapper: [:try :block :catch :finally |   
+		                               TestingAstNode name: #try
+		                                  contents: {  block.  catch. finally. }.]
 )
 
 variableDeclaration = (

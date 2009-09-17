@@ -863,6 +863,22 @@ testSwitchStatement1 = (
 )
 
 
+testTryStatement = (
+
+    |parsed expected|
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: 'try { } catch(x) { } finally { }').   
+    expected:: 
+           tn: #try
+               contents: {
+                   tn: #block contents: { }.
+                   tn: #catch contents: { 'x'. tn: #block contents: { }. }.
+                   tn: #finally contents: {  tn: #block contents: { }. }.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
 testUnaryExpression1 = (
 
     |parsed expected|
