@@ -10,6 +10,7 @@ class JSParser withParserLib: parserLibrary usingLib: platform =  (
 	Dictionary = platform Dictionary.
 	OrderedCollection = platform OrderedCollection.
 	Number = platform Number.
+	CollectingCommentParser = parserLibrary CollectingCommentParser.
 |
 )
 (
@@ -90,7 +91,8 @@ class JSGrammar = ExecutableGrammar (
      tAmpEq = tAmp,eq.
      tPipeEq = tPipe,eq.
      tCirEq = tCir,eq.
-     
+
+    
 
       leftparen = tokenFromChar: $(.
       rightparen =tokenFromChar: $).	
@@ -100,12 +102,15 @@ class JSGrammar = ExecutableGrammar (
       comma = tokenFromChar: $,.
       definition = string,tColon,value.
       obj =  leftbrace,  (definition starSeparatedBy: comma),rightbrace.
-      object = tokenFor: obj.
+      object =  obj.
 
       leftbracket = tokenFromChar: $[.
 	rightbracket = tokenFromChar: $].
       arr = leftbracket, (value starSeparatedBy: comma), rightbracket.
       array = tokenFor: arr.
+
+     comment = (slash,starChar,blockCommentBody,starChar,slash) | (slash,slash, lineCommentBody).
+
 
       ttrue = tokenFromSymbol: #true.
       tfalse = tokenFromSymbol: #false.
@@ -352,12 +357,51 @@ class JSGrammar = ExecutableGrammar (
 
          finallyBlock = finally, block.
 
+         functionDeclaration = function,identifier,
+                                           leftparen,formalParameterList,rightparen,
+                                           leftbrace,sourceElements,rightbrace.
+
+         formalParameterList = identifier star.
+
+         sourceElements = (statement | functionDeclaration ) star.
+
+         program = sourceElements.
         
 |
 )
 ('as yet unclassified'
+blockCommentBody = (
+	^CollectingCommentParser new
+	    termBlock: 
+	          [:input | 
+		       |c| 
+		       c: input peek.
+		       c isNil 
+		          ifTrue: [false]
+		          ifFalse: [ 
+ 			          (c = $*)
+			             ifTrue: [  | p |				           
+                                    p:: input position.
+                                    input next.
+                                    (input peek = $/) 
+                                           ifTrue: [input position: p. false]
+                                           ifFalse: [ input position: p. true] ] ] ]
+		         
+)
+
 charExceptFor: aChar = (
 	^CharExceptForParser new for: aChar
+)
+
+lineCommentBody = (
+	^CollectingCommentParser new
+	    termBlock: 
+	          [:input | 
+		       |c| 
+		       c: input peek.
+		       ((c = nil) or: [ c = 10 ]) 
+		            ifTrue: [false]
+		            ifFalse: [ |p| p: input position. input next. true]]
 )
 
 )
@@ -615,6 +659,13 @@ defaultClause = (
 		                               TestingAstNode name: #defaultCase contents: (statements asArray)]
 )
 
+definition  = (
+	^super definition wrapper: 
+	      [:name :c :value | 
+		     TestingAstNode name: #objectEntry
+		            contents: {name. value.}].
+)
+
 doStatement = (
 	^super doStatement 
 	                  wrapper: [:do :statement :while :lp :condition :rp :sc |   
@@ -863,8 +914,9 @@ number = (
 
 object  = (
 	^super object wrapper: 
-	      [:obj | JSObject withContent: 
-		               (Dictionary newFrom: ((obj token at: 2) collect: [:e | (e at: 1) -> (e at: 3)]))].
+	      [:lb :defs :rb | 
+		     TestingAstNode name: #object
+		            contents: (defs asArray)].
 )
 
 parse: input  = (

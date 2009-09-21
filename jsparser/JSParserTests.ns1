@@ -100,8 +100,8 @@ testDoStatement = (
 testEmptyObject = (
 
     | parsed |
-    parsed:: objectParser parse: (streamFromString: '{ }').
-    assert:[(parsed token) size = 3].
+    parsed:: parserWithAST parse: (streamFromString: '{ }').
+    assert:[parsed sameAs: (tn: #object contents: {})].
 )
 
 
@@ -768,51 +768,45 @@ testSimpleIdentifier = (
 )
 
 
-testSimpleObject = (
-
-    | parsed |
-    parsed:: objectParser parse: (streamFromString: '{ "foo": 3423, "hoo"  :"asd"}').
-    assert:[(parsed token at: 2) size = 2].
-)
-
-
-testSimpleObjectWithArrayAst = (
-
-    | parsed |
-    parsed:: parserWithAST parse: (streamFromString: '[{ "foo": 3423, "hoo"  :"asd"},{ "foo": 435, "hoo"  :"fsasd"}]').
-    assert:[((parsed at: 2) foo)  = 435].
-)
-
-
-testSimpleObjectWithAst = (
-
-    | parsed |
-    parsed:: parserWithAST parse: (streamFromString: '{ "foo": 3423, "hoo"  :"asd"}').
-    assert:[(parsed hoo)  = 'asd'].
-)
-
-
 testSimpleObjectWithAst2 = (
 
-    | parsed |
+    | parsed expected |
     parsed:: parserWithAST parse: (streamFromString: '{ "foo": 3423, "hoo"  :"asd"}').
-    assert:[(parsed foo)  = 3423].
+    expected::
+        tn: #object
+         contents: { 
+               tn:#objectEntry contents: { 'foo'. 3423  }.
+               tn:#objectEntry contents: { 'hoo'. 'asd'  }.
+         }.
+    assert:[parsed sameAs: expected].
 )
 
 
 testSimpleObjectWithAst3 = (
 
-    | parsed |
+    | parsed expected|
     parsed:: parserWithAST parse: (streamFromString: '[{ "hoo":null, "f_oo"  :3423}]').
-    assert:[((parsed at:1) f_oo)  = 3423].
+    expected::
+        tn: #object
+         contents: { 
+               tn:#objectEntry contents: { 'hoo'. 'null'  }.
+               tn:#objectEntry contents: { 'f_oo'. 3423  }.
+         }.
+    assert:[(parsed at: 1) sameAs: expected].
 )
 
 
 testSimpleObjectWithAst4 = (
 
-    | parsed |
+    | parsed expected|
     parsed:: parserWithAST parse: (streamFromString: '{ "foo": 34.23, "hoo"  :"asd"}').
-    assert:[(parsed foo)  = 34.23].
+    expected::
+        tn: #object
+         contents: { 
+               tn:#objectEntry contents: { 'foo'. 34.23  }.
+               tn:#objectEntry contents: { 'hoo'. 'asd'  }.
+         }.
+    assert:[parsed sameAs: expected ].
 )
 
 
@@ -826,8 +820,9 @@ testSimpleObjectWithAst5 = (
                                                                        "description"  :"Lover"},
                                                                      { "name": "O Brien",
                                                                        "description"  :"Goverment agent"}]').
-    assert:[((parsed at: 2) description)  = 'Lover'].
-    assert:[((parsed at: 3) js_name)  = 'O Brien'].
+    assert:[(parsed at: 1) sameAs: (tn: #object contents: { tn: #objectEntry contents: {'name'. 'Wiston Smith'. }.
+	                                                                                    tn: #objectEntry contents: {'description'. 'Protagonist'. }})].
+"    assert:[((parsed at: 3) js_name)  = 'O Brien']."
    " assert:[((parsed at: 3) isString)  = 'O Brien']."
 )
 
