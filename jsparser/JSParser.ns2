@@ -7,6 +7,7 @@ class JSParser withParserLib: parserLibrary usingLib: platform =  (
 	ExecutableGrammar = parserLibrary ExecutableGrammar.
 	CharParser = parserLibrary CharParser.
 	PredicateTokenParser = parserLibrary PredicateTokenParser.
+	Transcript = platform Transcript.
 	Dictionary = platform Dictionary.
 	OrderedCollection = platform OrderedCollection.
 	Number = platform Number.
@@ -109,7 +110,7 @@ class JSGrammar = ExecutableGrammar (
       arr = leftbracket, (value starSeparatedBy: comma), rightbracket.
       array = tokenFor: arr.
 
-     comment = (slash,starChar,blockCommentBody,starChar,slash) | (slash,slash, lineCommentBody).
+      comment = (slash,starChar,blockCommentBody,starChar,slash) | (slash,slash, lineCommentBody).
 
 
       ttrue = tokenFromSymbol: #true.
@@ -375,17 +376,18 @@ blockCommentBody = (
 	    termBlock: 
 	          [:input | 
 		       |c| 
-		       c: input peek.
+		       c: input peek.		     
 		       c isNil 
 		          ifTrue: [false]
 		          ifFalse: [ 
  			          (c = $*)
 			             ifTrue: [  | p |				           
                                     p:: input position.
-                                    input next.
+                                    input next.                                    
                                     (input peek = $/) 
-                                           ifTrue: [input position: p. false]
-                                           ifFalse: [ input position: p. true] ] ] ]
+                                           ifTrue: [input position: p. true]
+                                           ifFalse: [ false] ]  
+                                ifFalse: [false]  ] ]
 		         
 )
 
@@ -397,11 +399,11 @@ lineCommentBody = (
 	^CollectingCommentParser new
 	    termBlock: 
 	          [:input | 
-		       |c| 
+		       |c| 		        
 		       c: input peek.
-		       ((c = nil) or: [ c = 10 ]) 
-		            ifTrue: [false]
-		            ifFalse: [ |p| p: input position. input next. true]]
+		       ((c = nil) or: [ (c asciiValue) = 13 ]) 
+		            ifTrue: [ true]
+		            ifFalse: [  false]]
 )
 
 )

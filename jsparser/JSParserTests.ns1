@@ -493,6 +493,47 @@ testMultiplicativeExpression3 = (
 )
 
 
+testMultiplicativeExpression3WithComments = (
+
+    |parsed expected|
+    parsed:: parserWithAST multiplicativeExpression
+                      parse: (streamFromString: ' x %  2 /* hola */  / 29').   
+    expected:: 
+           tn: #multiplicative
+               contents: {
+                   $/.
+                   tn: #multiplicative
+                     contents: {
+                          $%.
+                          'x'.
+                          2.}.
+                   29.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testMultiplicativeExpression3WithLineComment = (
+
+    |parsed expected|
+    parsed:: parserWithAST multiplicativeExpression
+                      parse: (streamFromString: 'x % //hola 
+                                                                 2 / 29').   
+    expected:: 
+           tn: #multiplicative
+               contents: {
+                   $/.
+                   tn: #multiplicative
+                     contents: {
+                          $%.
+                          'x'.
+                          2.}.
+                   29.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
 testNegativeNumberParsing = (
 
    | result |
@@ -789,7 +830,7 @@ testSimpleObjectWithAst3 = (
     expected::
         tn: #object
          contents: { 
-               tn:#objectEntry contents: { 'hoo'. 'null'  }.
+               tn:#objectEntry contents: { 'hoo'. nil.  }.
                tn:#objectEntry contents: { 'f_oo'. 3423  }.
          }.
     assert:[(parsed at: 1) sameAs: expected].
