@@ -376,7 +376,7 @@ blockCommentBody = (
 	    termBlock: 
 	          [:input | 
 		       |c| 
-		       c: input peek.		     
+		       c: input peek.
 		       c isNil 
 		          ifTrue: [false]
 		          ifFalse: [ 
@@ -401,9 +401,7 @@ lineCommentBody = (
 	          [:input | 
 		       |c| 		        
 		       c: input peek.
-		       ((c = nil) or: [ (c asciiValue) = 13 ]) 
-		            ifTrue: [ true]
-		            ifFalse: [  false]]
+		       ((c = nil) or: [ (c asciiValue) = 13 ]) ]
 )
 
 )
