@@ -93,7 +93,13 @@ class JSGrammar = ExecutableGrammar (
      tPipeEq = tPipe,eq.
      tCirEq = tCir,eq.
 
-    
+     lineTerminator = (char: (Character lf)) | (char: (Character cr)).
+
+     regularExpressionLiteral = 
+                     tslash, 
+                     (  ((backslash, ( charExceptForCharIn: { (Character lf).  (Character cr). })) |
+                      (charExceptForCharIn: { (Character lf).  (Character cr). $/.})) plus),
+                      slash, (identifierStart star).
 
       leftparen = tokenFromChar: $(.
       rightparen =tokenFromChar: $).	
@@ -153,7 +159,7 @@ class JSGrammar = ExecutableGrammar (
 
       value =  string | number | object | array | ttrue | tfalse | null | identifier .      
   
-      literal  = null | ttrue | tfalse | number | string.
+      literal  = null | ttrue | tfalse | number | string |  regularExpressionLiteral.
 
       primaryexpression  = this |  literal | identifier | array | object.
 
@@ -395,6 +401,10 @@ charExceptFor: aChar = (
 	^CharExceptForParser new for: aChar
 )
 
+charExceptForCharIn: chars <Array> = (
+	^CharExceptForParser new forCharIn: chars
+)
+
 lineCommentBody = (
 	^CollectingCommentParser new
 	    termBlock: 
@@ -415,6 +425,10 @@ class CharExceptForParser = PredicateTokenParser (
 ('as yet unclassified'
 for: aChar = (
 	^self accept: [:c | c ~= aChar] errorMsg: ''
+)
+
+forCharIn: chars <Array> = (
+	^self accept: [:c |  (chars includes: c) not] errorMsg: ''
 )
 
 )
@@ -937,6 +951,16 @@ postfixExpression = (
 			                                             o.
 			                                        }.
 			                    ] ]. 
+)
+
+regularExpressionLiteral = (
+	^super regularExpressionLiteral 
+	                  wrapper: [:sl1 :searchPart :sl2 :modifiers |   
+		                               TestingAstNode name: #regexLiteral
+		                                  contents: {
+		                                       flattenCollectedString: searchPart.
+		                                       modifiers asArray.
+		                                   }.]
 )
 
 relationalExpression = (

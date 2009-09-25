@@ -497,7 +497,7 @@ testMultiplicativeExpression3WithComments = (
 
     |parsed expected|
     parsed:: parserWithAST multiplicativeExpression
-                      parse: (streamFromString: ' x %  2 /* hola */  / 29').   
+                      parse: (streamFromString: '/* hola */ x %  2  / 29').   
     expected:: 
            tn: #multiplicative
                contents: {
@@ -632,6 +632,32 @@ testPrimaryExpression = (
     assert:[parsed = 'hola'].
     parsed::   parserWithAST parse: (streamFromString: '"hola2"').
     assert:[parsed = 'hola2'].
+)
+
+
+testRegexMethodCall1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: 'var match = /^<(\w+)\s*\/?>$/.exec("a");').   
+    expected:: 
+           tn: #vardeclarations
+               contents: {
+                    tn: #vardeclaration 
+                        contents: {
+                               'match'. 
+                               tn: #call
+                                  contents: {
+                                       tn: #memberAccess 
+                                          contents:{ 
+                                              tn: #regexLiteral
+                                                 contents: { '^<(w+)s*/?>$'. {}. }.
+                                              'exec' }.
+                                       {'a'}.
+                                   } .
+              }.
+               }.
+   assert:[parsed sameAs: expected]. 
 )
 
 
