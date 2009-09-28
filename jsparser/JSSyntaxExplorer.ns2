@@ -1,0 +1,106 @@
+Newsqueak2
+'LangexplrExperiments'
+
+class JSSyntaxExplorer usingLib: platform = NewspeakObject (
+"A small program used to explore the syntax of Javascript snippets"
+|
+	Presenter = platform HPresenter.
+	Subject = platform Subject.
+	TextEditorFragment = platform Hopscotch TextEditorFragment.
+	ParsingLibrary = platform BlocklessCombinatorialParsing.
+	JSParser = platform JSParser.
+	ReadStream = platform ReadStream.
+	Platform = platform Platform.
+      platform = platform.
+|
+)
+(
+
+class JSSyntaxExplorerSubject = Subject (
+"Describe the class in this comment."
+|
+	text
+|
+)
+('as yet unclassified'
+createPresenter = (
+	^JSyntaxExplorerPresenter new subject: self.
+)
+
+)
+
+class JSyntaxExplorerPresenter = Presenter (
+"Describe the class in this comment."
+|
+	astPresenters
+	astHolder
+	editor
+|
+)
+(
+
+class ASTSubject tree: subTreeRoot = Subject (
+"Describe the class in this comment."
+|
+	root = subTreeRoot.
+|
+)
+('as yet unclassified'
+createPresenter = (
+	^ASTPresenter new subject: self.
+)
+
+)
+
+class ASTPresenter = Presenter (
+"Describe the class in this comment."
+|
+	
+|
+)
+('as yet unclassified'
+definition = ( "break."
+	^(subject root respondsTo: #contents )
+	   ifTrue: [ heading: [label: (subject root name asString)]
+		           details: [ column: ( subject root contents collect: [:e | (ASTSubject tree: e) createPresenter]) ] ]
+	   ifFalse: [ label: (subject root asString)].
+)
+
+)'as yet unclassified'
+definition = (
+     editor:: textEditor. 
+     editor text: 'var x = 1;'.
+     astHolder:: holder: [
+
+		                  astPresenters = nil ifTrue: [label: 'None']
+		                             ifFalse: [astPresenters]
+ 		                ]. 
+	^column: { 
+	                 editor.
+	                 button: 'Parse' action:[
+		                 |ast|
+		                 ast:: parseText: (editor text) .
+		                 astPresenters:: (ASTSubject tree: ast) createPresenter.
+		                 astHolder refresh.
+		           ].
+	                astHolder.
+	                 }
+)
+
+parseText: programText = (
+	|aJSParser parser|
+	aJSParser:: JSParser withParserLib: (ParsingLibrary usingLib: (Platform new))
+	                                 usingLib: platform.
+	parser:: aJSParser JSGrammarWithAST new.
+	^parser statement parse: (streamFromString: programText)
+)
+
+streamFromString: str = (
+	    ^ReadStream on:str from:1 to:(str size).
+)
+
+textEditor = (
+	^TextEditorFragment new.
+)
+
+))
