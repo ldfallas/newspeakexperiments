@@ -583,6 +583,25 @@ testNumberParsing = (
 )
 
 
+testParenthesizedExpression1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST primaryexpression
+                      parse: (streamFromString: '(foo(1, 2 ,3))').   
+    expected:: 
+        tn: #paren 
+           contents: {
+            tn: #call
+                     contents: {
+                          'foo'.
+                          {1. 2. 3.}.
+                     }.
+            }.
+   assert:[parsed sameAs: expected]. 
+    
+)
+
+
 testPostFixExpression1 = (
 
     |parsed expected|
@@ -1030,7 +1049,7 @@ testUnaryExpression7 = (
 
     |parsed expected|
     parsed:: parserWithAST unaryExpression
-                      parse: (streamFromString: '!x').   
+                      parse: (streamFromString: ' !x').   
     expected:: 
            tn: #unary
                contents: {

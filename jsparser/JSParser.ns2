@@ -161,7 +161,9 @@ class JSGrammar = ExecutableGrammar (
   
       literal  = null | ttrue | tfalse | number | string |  regularExpressionLiteral.
 
-      primaryexpression  = this |  literal | identifier | array | object.
+      primaryexpression  = this |  literal | identifier | array | object | parenthesized.
+
+      parenthesized = leftparen,expression,rightparen.
 
       functionexpression = function , identifier opt, 
                                        leftparen,formalparamlist, rightparen ,
@@ -207,7 +209,7 @@ class JSGrammar = ExecutableGrammar (
            (void, unaryExpression) | 
            (plusPlus, unaryExpression) |
            (minusMinus, unaryExpression) |
-           (( plusSign | negSign | tilde | exclamation ), unaryExpression).
+           ((tokenFor: ( plusSign | negSign | tilde | exclamation )), unaryExpression).
 
       multiplicativeExpression = 
               unaryExpression, ((tstarChar | tslash | tmodulo), unaryExpression) star.     
@@ -284,7 +286,8 @@ class JSGrammar = ExecutableGrammar (
 
       statement = block | variableStatement | emptyStatement | expressionStatement |
                           ifStatement | iterationStatement | withStatement | switchStatement |
-                          labelledStatement | tryStatement | throwStatement.
+                          labelledStatement | tryStatement | throwStatement | 
+                          breakStatement.
   
       block = leftbrace, statementList , rightbrace.
 
@@ -340,7 +343,7 @@ class JSGrammar = ExecutableGrammar (
 
       continueStatement = continue, (identifier opt), tSemicolon.
 
-      breakStatement = continue, (identifier opt), tSemicolon.
+      breakStatement = break, (identifier opt), tSemicolon.
 
       returnStatement = return, (expression opt), tSemicolon.
 
@@ -594,6 +597,14 @@ block = (
 		                                    contents: (statements asArray). ].
 )
 
+breakStatement = (
+	^super breakStatement 
+	     wrapper: [:b :id :sc |
+		       TestingAstNode name: #break
+		           contents: { id }
+		 ]
+)
+
 callExpression = (
 		^super callExpression 
 	                 wrapper: [:id :col | 
@@ -655,6 +666,14 @@ conditionalExpressionNoIn = (
 		                                               contents: { condition. 
 		                                                                 col at: 2. 
 		                                                                 col at: 4. }]].
+)
+
+continueStatement = (
+	^super continueStatement 
+	     wrapper: [:b :id :sc |
+		       TestingAstNode name: #continue
+		           contents: { id }
+		 ]
 )
 
 createNodeForBinaryExpression: type first: first rest: rest = (
@@ -931,6 +950,13 @@ object  = (
 	      [:lb :defs :rb | 
 		     TestingAstNode name: #object
 		            contents: (defs asArray)].
+)
+
+parenthesized = (
+	^super parenthesized wrapper: 
+	                  [:lp :expression :rp |  
+		                  TestingAstNode name: #paren contents: { expression }.
+		              ].
 )
 
 parse: input  = (
