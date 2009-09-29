@@ -846,6 +846,21 @@ testSimpleCallExpression = (
 )
 
 
+testSimpleCallExpression2 = (
+
+    |parsed expected|
+    parsed:: parserWithAST callExpression
+                      parse: (streamFromString: 'document("x","b","a")').   
+    expected:: 
+           tn: #call
+               contents: {
+                   'document'.
+                   {'x'. 'b'.'a'.}.
+               }.
+    assert: [parsed sameAs: expected].
+)
+
+
 testSimpleIdentifier = (
 
     | parsed |

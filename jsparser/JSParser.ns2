@@ -12,6 +12,7 @@ class JSParser withParserLib: parserLibrary usingLib: platform =  (
 	OrderedCollection = platform OrderedCollection.
 	Number = platform Number.
 	CollectingCommentParser = parserLibrary CollectingCommentParser.
+	CombinatorialParser = parserLibrary CombinatorialParser.
 |
 )
 (
@@ -148,14 +149,11 @@ class JSGrammar = ExecutableGrammar (
       while = tokenFromSymbol: #while.
       with = tokenFromSymbol: #with.
 
-      keyword = break | else | tnew | case | finally | return | catch | for | 
-                       switch | continue | function | this | default | if | throw | 
-                       delete | in | try | do | instanceof | typeof | var | void | 
-                       while | with. 
+      
  
       letter = (charBetween: $a and: $z) | (charBetween: $A and: $Z).
       identifierStart =  letter | (char: $$) | (char: $_).
-      identifier =  (keyword not) &(tokenFor: (identifierStart), (identifierStart | digit) star) .
+      identifier = accept: (tokenFor: (identifierStart), (identifierStart | digit) star) ifNotIn: keywords .
 
       value =  string | number | object | array | ttrue | tfalse | null | identifier .      
   
@@ -380,6 +378,10 @@ class JSGrammar = ExecutableGrammar (
 |
 )
 ('as yet unclassified'
+accept: parser ifNotIn: invalidWords <Array[String]> = (
+	^ParserWithExceptions accept: parser  exceptions: invalidWords.
+)
+
 blockCommentBody = (
 	^CollectingCommentParser new
 	    termBlock: 
@@ -408,6 +410,11 @@ charExceptForCharIn: chars <Array> = (
 	^CharExceptForParser new forCharIn: chars
 )
 
+keywords = (^{ 'break' . 'else' . 'new' . 'case' . 'finally' . 'return' . 'catch' . 'for' . 
+'switch' . 'continue' . 'function' . 'this' . 'default' . 'if' . 'throw' .  
+'delete' . 'in' . 'try' . 'do' . 'instanceof' . 'typeof' . 'var' . 'void' . 
+'while' . 'with'. })
+
 lineCommentBody = (
 	^CollectingCommentParser new
 	    termBlock: 
@@ -432,6 +439,61 @@ for: aChar = (
 
 forCharIn: chars <Array> = (
 	^self accept: [:c |  (chars includes: c) not] errorMsg: ''
+)
+
+)
+
+class JSObject withContent: dContent =  (
+"Instances of this class represent JS objects."
+|
+	content = dContent.
+|
+)
+('as yet unclassified'
+doesNotUnderstand: message = (
+      | fieldName |
+      fieldName:: message selector string.
+      (fieldName beginsWith: 'json_')  
+             ifTrue: [fieldName:: fieldName allButFirst: 5].
+	^content  at: fieldName ifAbsent: [nil].
+)
+
+)
+
+class ParserWithExceptions accept: acceptParser exceptions: exceptionArray = CombinatorialParser (
+"Parses using one parser and fails if the second parser succeeds."
+|
+	acceptParser = acceptParser.
+	exceptions
+ 
+|
+	initExceptions: exceptionArray.
+)
+('as yet unclassified'
+initExceptions: exceptionArray = (
+	exceptions:: Dictionary new.
+	exceptionArray do: [:e | exceptions at: e put: true ].
+
+)
+
+parse: input inContext: ctxt  ifError: blk = (
+	|initialPosition result executed tstr|
+	initialPosition:: input position.
+	executed: true.
+	
+	result::
+	     acceptParser parse: input 
+	                     inContext: ctxt 
+	                     ifError: [:m :p | blk value: m value: p. 
+		                                      executed: false].
+	executed ifTrue: [
+            tstr::  ((result token at: 1) asString),
+                       (String withAll: (result token at:2)).
+		(exceptions  includesKey: tstr)
+		      ifTrue: [ blk value: 'Keyword when expecting identifier'
+			                   value: initialPosition]		
+		      ifFalse: [ ^result ].
+		                       ]
 )
 
 )
@@ -476,23 +538,6 @@ sameAs: other = (
 		                   i:i+1.].
 	              t].
 	
-)
-
-)
-
-class JSObject withContent: dContent =  (
-"Instances of this class represent JS objects."
-|
-	content = dContent.
-|
-)
-('as yet unclassified'
-doesNotUnderstand: message = (
-      | fieldName |
-      fieldName:: message selector string.
-      (fieldName beginsWith: 'json_')  
-             ifTrue: [fieldName:: fieldName allButFirst: 5].
-	^content  at: fieldName ifAbsent: [nil].
 )
 
 )
@@ -863,7 +908,7 @@ getEscapedValue: collection <OrderedCollection> = (
 )
 
 identifier  = (
-	^super identifier wrapper: [:t :k |  (flattenCharCollectionToString: (k token  ))].
+	^super identifier wrapper: [ :k |  (flattenCharCollectionToString: (k token  ))].
 )
 
 ifStatement = (
