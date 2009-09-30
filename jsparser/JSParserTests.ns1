@@ -311,6 +311,26 @@ testFunctionExpression = (
 )
 
 
+testFunctionExpression2 = (
+
+    | parsed expected |
+    parsed:: parserWithAST functionexpression parse: (streamFromString: 'function (x ,y) { return 1;   }').
+    expected:: 
+        tn: #function
+         contents: {
+           nil.
+           {'x'. 'y'.}.
+           {
+           tn: #return
+               contents: {
+                   1.
+               }.
+            }.
+          }.
+    assert: [parsed sameAs: expected].
+)
+
+
 testIfStatement1 = (
 
     |parsed expected|
@@ -776,6 +796,34 @@ testRelationalExpression6 = (
 )
 
 
+testReturnStatement1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: 'return 1;').   
+    expected:: 
+           tn: #return
+               contents: {
+                   1.
+               }.
+    assert: [parsed sameAs: expected].
+)
+
+
+testReturnStatement2 = (
+
+    |parsed expected|
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: 'return ;').   
+    expected:: 
+           tn: #return
+               contents: {
+                   
+               }.
+    assert: [parsed sameAs: expected].
+)
+
+
 testShiftExpression1 = (
 
     |parsed expected|
@@ -917,6 +965,23 @@ testSimpleObjectWithAst5 = (
     parsed:: parserWithAST 
                          parse: (streamFromString: '[{ "name": "Wiston Smith",
                                                                        "description"  :"Protagonist"},
+                                                                     { "name": "Julia",
+                                                                       "description"  :"Lover"},
+                                                                     { "name": "O Brien",
+                                                                       "description"  :"Goverment agent"}]').
+    assert:[(parsed at: 1) sameAs: (tn: #object contents: { tn: #objectEntry contents: {'name'. 'Wiston Smith'. }.
+	                                                                                    tn: #objectEntry contents: {'description'. 'Protagonist'. }})].
+"    assert:[((parsed at: 3) js_name)  = 'O Brien']."
+   " assert:[((parsed at: 3) isString)  = 'O Brien']."
+)
+
+
+testSimpleObjectWithAst6 = (
+
+    | parsed |
+    parsed:: parserWithAST 
+                         parse: (streamFromString: '[{ name: "Wiston Smith",
+                                                                       description  :"Protagonist"},
                                                                      { "name": "Julia",
                                                                        "description"  :"Lover"},
                                                                      { "name": "O Brien",

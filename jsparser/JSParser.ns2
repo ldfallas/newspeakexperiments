@@ -108,8 +108,9 @@ class JSGrammar = ExecutableGrammar (
       leftbrace = tokenFromChar: ${.
       rightbrace =tokenFromChar: $}.
       comma = tokenFromChar: $,.
-      definition = string,tColon,value.
-      obj =  leftbrace,  (definition starSeparatedBy: comma),rightbrace.
+      propertyName = string | identifier | number.
+      propertyNameAndValue = propertyName,tColon,value.
+      obj =  leftbrace,  (propertyNameAndValue starSeparatedBy: comma),rightbrace.
       object =  obj.
 
       leftbracket = tokenFromChar: $[.
@@ -155,7 +156,7 @@ class JSGrammar = ExecutableGrammar (
       identifierStart =  letter | (char: $$) | (char: $_).
       identifier = accept: (tokenFor: (identifierStart), (identifierStart | digit) star) ifNotIn: keywords .
 
-      value =  string | number | object | array | ttrue | tfalse | null | identifier .      
+      value =  assignmentExpression .      
   
       literal  = null | ttrue | tfalse | number | string |  regularExpressionLiteral.
 
@@ -164,9 +165,9 @@ class JSGrammar = ExecutableGrammar (
       parenthesized = leftparen,expression,rightparen.
 
       functionexpression = function , identifier opt, 
-                                       leftparen,formalparamlist, rightparen ,
-                                       leftbrace,rightbrace.
-      formalparamlist = identifier , (comma , identifier) star. 
+                                       leftparen,formalParameterList , rightparen ,
+                                       leftbrace,sourceElements,rightbrace.
+      formalParameterList = identifier starSeparatedBy: comma. 
 
       memberexpression =   (simplememberexpression  ),
                                          (( leftbracket, expression, rightbracket) | ( tdot, identifier)) star.
@@ -285,7 +286,7 @@ class JSGrammar = ExecutableGrammar (
       statement = block | variableStatement | emptyStatement | expressionStatement |
                           ifStatement | iterationStatement | withStatement | switchStatement |
                           labelledStatement | tryStatement | throwStatement | 
-                          breakStatement.
+                          breakStatement | returnStatement.
   
       block = leftbrace, statementList , rightbrace.
 
@@ -369,7 +370,7 @@ class JSGrammar = ExecutableGrammar (
                                            leftparen,formalParameterList,rightparen,
                                            leftbrace,sourceElements,rightbrace.
 
-         formalParameterList = identifier star.
+ 
 
          sourceElements = (statement | functionDeclaration ) star.
 
@@ -737,13 +738,6 @@ defaultClause = (
 		                               TestingAstNode name: #defaultCase contents: (statements asArray)]
 )
 
-definition  = (
-	^super definition wrapper: 
-	      [:name :c :value | 
-		     TestingAstNode name: #objectEntry
-		            contents: {name. value.}].
-)
-
 doStatement = (
 	^super doStatement 
 	                  wrapper: [:do :statement :while :lp :condition :rp :sc |   
@@ -895,8 +889,8 @@ forStatementNoVar = (
 
 functionexpression = (
 	^super functionexpression wrapper:
-	    [:fun :fname :lp :params :rp :lb :rb |  TestingAstNode name: #function
-		                                contents: {fname. params. }].
+	    [:fun :fname :lp :params :rp :lb :elements :rb |  TestingAstNode name: #function
+		                                contents: {fname. (params asArray). (elements asArray).}].
 )
 
 getEscapedValue: collection <OrderedCollection> = (
@@ -1024,6 +1018,17 @@ postfixExpression = (
 			                    ] ]. 
 )
 
+program = (
+	^super program wrapper: [:elements | elements asArray  ].
+)
+
+propertyNameAndValue  = (
+	^super propertyNameAndValue wrapper: 
+	      [:name :c :value | 
+		     TestingAstNode name: #objectEntry
+		            contents: {name. value.}].
+)
+
 regularExpressionLiteral = (
 	^super regularExpressionLiteral 
 	                  wrapper: [:sl1 :searchPart :sl2 :modifiers |   
@@ -1046,6 +1051,17 @@ relationalExpressionNoIn = (
 	                 wrapper: [:first :rest |   
 		                                createNodeForBinaryExpression:#relational
 		                                    first: first rest: rest ].
+)
+
+returnStatement = (
+	^super returnStatement 
+	     wrapper: [:r :expression :sc |
+		       TestingAstNode name: #return
+		           contents: ((expression = nil) 
+		                                ifTrue: [{  }]
+		                                ifFalse: [{ expression  }]
+		                            )
+		 ]
 )
 
 shiftExpression = (
