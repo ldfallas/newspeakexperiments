@@ -2,7 +2,7 @@ Newsqueak2
 'LangexplrExperiments'
 
 class JSParser withParserLib: parserLibrary usingLib: platform =  (
-"Experiment for JS parser based on the description from http://www.json.org/fatfree.html "
+"Experiment for JS parser based on the description from http://www.ecma-international.org/publications/standards/Ecma-262.htm "
 |
 	ExecutableGrammar = parserLibrary ExecutableGrammar.
 	CharParser = parserLibrary CharParser.

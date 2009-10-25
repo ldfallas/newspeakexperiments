@@ -11,6 +11,7 @@ class JSSyntaxExplorer usingLib: platform = NewspeakObject (
 	JSParser = platform JSParser.
 	ReadStream = platform ReadStream.
 	Platform = platform Platform.
+	Error = platform Error.
       platform = platform.
 |
 )
@@ -91,8 +92,12 @@ parseText: programText = (
 	|aJSParser parser|
 	aJSParser:: JSParser withParserLib: (ParsingLibrary usingLib: (Platform new))
 	                                 usingLib: platform.
-	parser:: aJSParser JSGrammarWithAST new.
-	^parser statement parse: (streamFromString: programText)
+    ^[  parser:: aJSParser JSGrammarWithAST new.
+         parser statement parse: (streamFromString: programText) ]
+                 on: Error 
+                  do:[:e | (aJSParser TestingAstNode) 
+	                             name: ('error: ',(e message)) 
+	                             contents: {e message . (e position asString)}]
 )
 
 streamFromString: str = (

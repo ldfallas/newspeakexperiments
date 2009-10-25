@@ -18,6 +18,54 @@ testAdditiveExpression1 = (
 )
 
 
+testAutoNoSemiColonInsertion1 = (
+
+    |parsed expected code|
+    code:: '{
+       print("a");
+       print("b"); }'.
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: code).   
+    expected:: 
+           tn: #block
+               contents: {
+                   tn: #expressionStatement
+                     contents: {
+                            tn: #call contents: { 'print'. { 'a' } }.
+                      }.
+                   tn: #expressionStatement
+                     contents: {
+                            tn: #call contents: { 'print'. { 'b' } }.
+                      }.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testAutoSemiColonInsertion1 = (
+
+    |parsed expected code|
+    code:: '{
+       print("a")
+       print("b") }'.
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: code).   
+    expected:: 
+           tn: #block
+               contents: {
+                   tn: #expressionStatement
+                     contents: {
+                            tn: #call contents: { 'print'. { 'a' } }.
+                      }.
+                   tn: #expressionStatement
+                     contents: {
+                            tn: #call contents: { 'print'. { 'b' } }.
+                      }.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
 testBitAnd1 = (
 
     |parsed expected|
