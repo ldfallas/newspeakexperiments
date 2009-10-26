@@ -66,6 +66,67 @@ testAutoSemiColonInsertion1 = (
 )
 
 
+testAutoSemiColonInsertion2 = (
+
+    |parsed expected code|
+    code:: '{
+       print("a") // Hi
+       print("b") }'.
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: code).   
+    expected:: 
+           tn: #block
+               contents: {
+                   tn: #expressionStatement
+                     contents: {
+                            tn: #call contents: { 'print'. { 'a' } }.
+                      }.
+                   tn: #expressionStatement
+                     contents: {
+                            tn: #call contents: { 'print'. { 'b' } }.
+                      }.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testAutoSemiColonInsertion3 = (
+
+    |parsed expected code|
+    code:: '{
+       print("a") /* d */
+       print("b") /* ws */ }'.
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: code).   
+    expected:: 
+           tn: #block
+               contents: {
+                   tn: #expressionStatement
+                     contents: {
+                            tn: #call contents: { 'print'. { 'a' } }.
+                      }.
+                   tn: #expressionStatement
+                     contents: {
+                            tn: #call contents: { 'print'. { 'b' } }.
+                      }.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+
+testAutoSemiColonInsertion4 = (
+
+    | code failed|
+    failed:: false.
+    code:: '{
+       print("a")   print("b") }'.
+    [ parserWithAST statement
+                      parse: (streamFromString: code) ] on: Error do: [failed:: true].   
+
+   assert:[failed]. 
+)
+
+
 testBitAnd1 = (
 
     |parsed expected|

@@ -17,6 +17,41 @@ class JSParser withParserLib: parserLibrary usingLib: platform =  (
 )
 (
 
+class JSObject withContent: dContent =  (
+"Instances of this class represent JS objects."
+|
+	content = dContent.
+|
+)
+('as yet unclassified'
+doesNotUnderstand: message = (
+      | fieldName |
+      fieldName:: message selector string.
+      (fieldName beginsWith: 'json_')  
+             ifTrue: [fieldName:: fieldName allButFirst: 5].
+	^content  at: fieldName ifAbsent: [nil].
+)
+
+)
+
+class PeekCharParser for: character= CombinatorialParser (
+"Parser for detecting a character without consuming it"
+|
+	character = character.
+|
+)
+('as yet unclassified'
+parse: input inContext: context  ifError: blk = (
+| token  |
+token:: input nextIfAbsent:[blk value:errMsg value: input position-1].
+(token = character) 
+  ifFalse:[blk value: errMsg value: input position-1 ].
+input position: input position-1.
+ ^token.
+)
+
+)
+
 class JSGrammar = ExecutableGrammar (
 "Experiment for JS grammar based on the description from http://www.ecma-international.org/publications/standards/Ecma-262.htm"
 |
@@ -42,6 +77,9 @@ class JSGrammar = ExecutableGrammar (
       question = char: $?.
       colon = char: $:.
       semicolon = char: $;.
+
+      lf = char: (Character lf).
+      cr = char: (Character cr).
 	
 	negSign = (char: $-).
 	plusSign = (char: $+).
@@ -301,8 +339,8 @@ class JSGrammar = ExecutableGrammar (
        
       emptyStatement = tSemicolon.
 
-      specialStatementTermination = ( ((char: (Character cr)) | (char: (Character lf))) not & whitespace ) star, 
-                                                          ((char: $;) opt).
+      specialStatementTermination = (( cr | lf ) not & whitespace ) star,
+                                                          (semicolon | comment | lf | cr | (peek: $})).
 
       expressionStatement = (((function | leftbrace) not) & expression), specialStatementTermination.
 
@@ -428,6 +466,10 @@ lineCommentBody = (
 		       ((c = nil) or: [ (c asciiValue) = 13 ]) ]
 )
 
+peek: c = (
+	^PeekCharParser for: c
+)
+
 )
 
 class CharExceptForParser = PredicateTokenParser (
@@ -443,23 +485,6 @@ for: aChar = (
 
 forCharIn: chars <Array> = (
 	^self accept: [:c |  (chars includes: c) not] errorMsg: ''
-)
-
-)
-
-class JSObject withContent: dContent =  (
-"Instances of this class represent JS objects."
-|
-	content = dContent.
-|
-)
-('as yet unclassified'
-doesNotUnderstand: message = (
-      | fieldName |
-      fieldName:: message selector string.
-      (fieldName beginsWith: 'json_')  
-             ifTrue: [fieldName:: fieldName allButFirst: 5].
-	^content  at: fieldName ifAbsent: [nil].
 )
 
 )
