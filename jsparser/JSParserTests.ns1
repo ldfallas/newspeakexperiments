@@ -48,7 +48,7 @@ testAutoSemiColonInsertion1 = (
     code:: '{
        print("a")
        print("b") }'.
-    parsed:: parserWithAST statement
+    parsed:: scParserWithAST statement
                       parse: (streamFromString: code).   
     expected:: 
            tn: #block
@@ -72,7 +72,7 @@ testAutoSemiColonInsertion2 = (
     code:: '{
        print("a") // Hi
        print("b") }'.
-    parsed:: parserWithAST statement
+    parsed:: scParserWithAST statement
                       parse: (streamFromString: code).   
     expected:: 
            tn: #block
@@ -96,7 +96,7 @@ testAutoSemiColonInsertion3 = (
     code:: '{
        print("a") /* d */
        print("b") /* ws */ }'.
-    parsed:: parserWithAST statement
+    parsed:: scParserWithAST statement
                       parse: (streamFromString: code).   
     expected:: 
            tn: #block
@@ -120,10 +120,31 @@ testAutoSemiColonInsertion4 = (
     failed:: false.
     code:: '{
        print("a")   print("b") }'.
-    [ parserWithAST statement
+    [ scParserWithAST statement
                       parse: (streamFromString: code) ] on: Error do: [failed:: true].   
 
    assert:[failed]. 
+)
+
+
+testAutoSemiColonInsertion5 = (
+
+    |parsed expected code|
+    code:: '{
+       a
+       ++ b }'.
+    parsed:: scParserWithAST statement
+                      parse: (streamFromString: code).   
+    expected:: 
+           tn: #block
+               contents: {
+                   'a'.
+                   tn: #expressionStatement
+                     contents: {
+                            tn: #unary contents: { '++'. 'a'. }.
+                      }.
+               }.
+   assert:[parsed sameAs: expected]. 
 )
 
 
@@ -1384,6 +1405,12 @@ objectParser = (
 parserWithAST = (
 
     ^jsParser JSGrammarWithAST new.
+)
+
+
+scParserWithAST = (
+
+    ^jsParser  JSCompleteGrammar new.
 )
 
 

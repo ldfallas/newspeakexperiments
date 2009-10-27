@@ -13,26 +13,10 @@ class JSParser withParserLib: parserLibrary usingLib: platform =  (
 	Number = platform Number.
 	CollectingCommentParser = parserLibrary CollectingCommentParser.
 	CombinatorialParser = parserLibrary CombinatorialParser.
+	public JSCompleteGrammar =  JSGrammarWithAST mixin |>  JSGrammarWithSemicolonInsertion.
 |
 )
 (
-
-class JSObject withContent: dContent =  (
-"Instances of this class represent JS objects."
-|
-	content = dContent.
-|
-)
-('as yet unclassified'
-doesNotUnderstand: message = (
-      | fieldName |
-      fieldName:: message selector string.
-      (fieldName beginsWith: 'json_')  
-             ifTrue: [fieldName:: fieldName allButFirst: 5].
-	^content  at: fieldName ifAbsent: [nil].
-)
-
-)
 
 class PeekCharParser for: character= CombinatorialParser (
 "Parser for detecting a character without consuming it"
@@ -48,6 +32,23 @@ token:: input nextIfAbsent:[blk value:errMsg value: input position-1].
   ifFalse:[blk value: errMsg value: input position-1 ].
 input position: input position-1.
  ^token.
+)
+
+)
+
+class CharExceptForParser = PredicateTokenParser (
+"Parses any character expect for the specified."
+|
+
+|
+)
+('as yet unclassified'
+for: aChar = (
+	^self accept: [:c | c ~= aChar] errorMsg: ''
+)
+
+forCharIn: chars <Array> = (
+	^self accept: [:c |  (chars includes: c) not] errorMsg: ''
 )
 
 )
@@ -339,10 +340,9 @@ class JSGrammar = ExecutableGrammar (
        
       emptyStatement = tSemicolon.
 
-      specialStatementTermination = (( cr | lf ) not & whitespace ) star,
-                                                          (semicolon | comment | lf | cr | (peek: $})).
+      
 
-      expressionStatement = (((function | leftbrace) not) & expression), specialStatementTermination.
+      expressionStatement = (((function | leftbrace) not) & expression), tSemicolon.
 
       ifStatement = if, leftparen,expression,rightparen,statement,(else,statement) opt.
 
@@ -472,19 +472,19 @@ peek: c = (
 
 )
 
-class CharExceptForParser = PredicateTokenParser (
-"Parses any character expect for the specified."
+class JSObject withContent: dContent =  (
+"Instances of this class represent JS objects."
 |
-
+	content = dContent.
 |
 )
 ('as yet unclassified'
-for: aChar = (
-	^self accept: [:c | c ~= aChar] errorMsg: ''
-)
-
-forCharIn: chars <Array> = (
-	^self accept: [:c |  (chars includes: c) not] errorMsg: ''
+doesNotUnderstand: message = (
+      | fieldName |
+      fieldName:: message selector string.
+      (fieldName beginsWith: 'json_')  
+             ifTrue: [fieldName:: fieldName allButFirst: 5].
+	^content  at: fieldName ifAbsent: [nil].
 )
 
 )
@@ -570,6 +570,18 @@ sameAs: other = (
 )
 
 )
+
+class JSGrammarWithSemicolonInsertion = JSGrammar (
+"Parser features that add automatic semicolon insertion"
+|
+ 
+    specialStatementTermination = (( cr | lf ) not & whitespace ) star,
+                                                     (semicolon | comment | lf | cr | (peek: $})).
+
+      expressionStatement = (((function | leftbrace) not) & expression), specialStatementTermination.
+| 
+)
+()
 
 class JSGrammarWithAST = JSGrammar(
 "Parses a JS File and generates and Ast"
