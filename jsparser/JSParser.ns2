@@ -18,41 +18,6 @@ class JSParser withParserLib: parserLibrary usingLib: platform =  (
 )
 (
 
-class PeekCharParser for: character= CombinatorialParser (
-"Parser for detecting a character without consuming it"
-|
-	character = character.
-|
-)
-('as yet unclassified'
-parse: input inContext: context  ifError: blk = (
-| token  |
-token:: input nextIfAbsent:[blk value:errMsg value: input position-1].
-(token = character) 
-  ifFalse:[blk value: errMsg value: input position-1 ].
-input position: input position-1.
- ^token.
-)
-
-)
-
-class CharExceptForParser = PredicateTokenParser (
-"Parses any character expect for the specified."
-|
-
-|
-)
-('as yet unclassified'
-for: aChar = (
-	^self accept: [:c | c ~= aChar] errorMsg: ''
-)
-
-forCharIn: chars <Array> = (
-	^self accept: [:c |  (chars includes: c) not] errorMsg: ''
-)
-
-)
-
 class JSGrammar = ExecutableGrammar (
 "Experiment for JS grammar based on the description from http://www.ecma-international.org/publications/standards/Ecma-262.htm"
 |
@@ -489,6 +454,23 @@ doesNotUnderstand: message = (
 
 )
 
+class CharExceptForParser = PredicateTokenParser (
+"Parses any character expect for the specified."
+|
+
+|
+)
+('as yet unclassified'
+for: aChar = (
+	^self accept: [:c | c ~= aChar] errorMsg: ''
+)
+
+forCharIn: chars <Array> = (
+	^self accept: [:c |  (chars includes: c) not] errorMsg: ''
+)
+
+)
+
 class ParserWithExceptions accept: acceptParser exceptions: exceptionArray = CombinatorialParser (
 "Parses using one parser and fails if the second parser succeeds."
 |
@@ -535,7 +517,7 @@ class TestingAstNode name: theName contents: theContent = (
 |
 )
 ('as yet unclassified'
-private compare: a with: b = (
+compare: a with: b = (
       |t i|
 	(a respondsTo:  #sameAs:)
 			ifTrue: [t:: a sameAs: b]
@@ -548,7 +530,7 @@ private compare: a with: b = (
 						                          total and: [compare: current 
 							                                          with: (b at: i) ] ]]
 				   ifFalse: [ t:: a = b]] .
-     t ifFalse: [break].
+     t ifFalse: ["break"].
      ^t.
 )
 
@@ -567,6 +549,24 @@ sameAs: other = (
 		                   i:i+1.].
 	              t].
 	
+)
+
+)
+
+class PeekCharParser for: character= CombinatorialParser (
+"Parser for detecting a character without consuming it"
+|
+	character = character.
+|
+)
+('as yet unclassified'
+parse: input inContext: context  ifError: blk = (
+| token  |
+token:: input nextIfAbsent:[blk value:errMsg value: input position-1].
+(token = character) 
+  ifFalse:[blk value: errMsg value: input position-1 ].
+input position: input position-1.
+ ^token.
 )
 
 )

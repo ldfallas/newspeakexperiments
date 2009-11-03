@@ -1,7 +1,45 @@
-Newsqueak1
+Newsqueak2
 'LangexplrExperiments'
-JSParserTests = TestCase (
-'as yet unclassified'
+
+class JSParserTests usingPlatform: platform testFramework: unitTesting = NewspeakObject (
+  |
+      protected TestCase = unitTesting TestCase.
+      protected Platform = platform Platform.
+      protected JSParser = platform JSParser.
+      protected BlocklessCombinatorialParsing = platform BlocklessCombinatorialParsing.
+      protected ReadStream = platform ReadStream.
+      protected OrderedCollection = platform OrderedCollection.
+      protected Error = platform Error.
+  |
+)
+(
+
+class JSParserTestCase selector: s = TestCase selector: s (
+" "
+|
+
+|
+)
+(
+
+class BasicConfiguration = TestConfiguration (
+)
+('configuration methods'
+configure: platform <Platform> ^ <Class> = (
+      ""
+      |unitTestLib|
+      unitTestLib:: platform NSUnit NSUnit usingPlatform: platform.
+      ^ ((platform JSParserTests) 
+                usingPlatform: platform 
+                testFramework: unitTestLib) JSParserTestCase.
+)
+
+testModuleName ^ <Symbol> = (
+		"Don't change - class under test needs to match returned name!"
+		^ #'JSParserTests`JSParserTestCase'.
+	)
+
+)'as yet unclassified'
 testAdditiveExpression1 = (
 
     |parsed expected|
@@ -16,7 +54,6 @@ testAdditiveExpression1 = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testAutoNoSemiColonInsertion1 = (
 
@@ -41,7 +78,6 @@ testAutoNoSemiColonInsertion1 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testAutoSemiColonInsertion1 = (
 
     |parsed expected code|
@@ -64,7 +100,6 @@ testAutoSemiColonInsertion1 = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testAutoSemiColonInsertion2 = (
 
@@ -89,7 +124,6 @@ testAutoSemiColonInsertion2 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testAutoSemiColonInsertion3 = (
 
     |parsed expected code|
@@ -113,7 +147,6 @@ testAutoSemiColonInsertion3 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testAutoSemiColonInsertion4 = (
 
     | code failed|
@@ -125,7 +158,6 @@ testAutoSemiColonInsertion4 = (
 
    assert:[failed]. 
 )
-
 
 testAutoSemiColonInsertion5 = (
 
@@ -147,7 +179,6 @@ testAutoSemiColonInsertion5 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testBitAnd1 = (
 
     |parsed expected|
@@ -162,7 +193,6 @@ testBitAnd1 = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testBitOr1 = (
 
@@ -179,7 +209,6 @@ testBitOr1 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testBitXor1 = (
 
     |parsed expected|
@@ -194,7 +223,6 @@ testBitXor1 = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testConditional1 = (
 
@@ -211,7 +239,6 @@ testConditional1 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testDoStatement = (
 
     |parsed expected|
@@ -226,14 +253,12 @@ testDoStatement = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testEmptyObject = (
 
     | parsed |
     parsed:: parserWithAST parse: (streamFromString: '{ }').
     assert:[parsed sameAs: (tn: #object contents: {})].
 )
-
 
 testEqualityExpression1 = (
 
@@ -250,7 +275,6 @@ testEqualityExpression1 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testEqualityExpression2 = (
 
     |parsed expected|
@@ -265,7 +289,6 @@ testEqualityExpression2 = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testEqualityExpression3 = (
 
@@ -282,14 +305,12 @@ testEqualityExpression3 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testEscapedQuoteStringParsing = (
 
    | result |
      result:: stringParser parse: (streamFromString: '"H\"OLA"').
      assert: [ (flattenCollectedString: (result token at: 2)) = 'H"OLA' ].
 )
-
 
 testExpressionSequence1 = (
 
@@ -300,7 +321,6 @@ testExpressionSequence1 = (
     assert:[parsed sameAs: expected]. 
     
 )
-
 
 testExpressionSequence2 = (
 
@@ -317,7 +337,6 @@ testExpressionSequence2 = (
    assert:[parsed sameAs: expected]. 
     
 )
-
 
 testExpressionStatement1 = (
 
@@ -337,14 +356,12 @@ testExpressionStatement1 = (
     
 )
 
-
 testFloatNumberParsing = (
 
    | result |
      result:: numberParser parse: (streamFromString: '234.32;').
      assert: [ (flattenCharCollectionToString: result token) = '234.32' ].
 )
-
 
 testForInStatement1 = (
 
@@ -362,7 +379,6 @@ testForInStatement1 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testForInStatementNoVar1 = (
 
     |parsed expected|
@@ -377,7 +393,6 @@ testForInStatementNoVar1 = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testForStatement1 = (
 
@@ -396,7 +411,6 @@ testForStatement1 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testForStatement2 = (
 
     |parsed expected|
@@ -412,7 +426,6 @@ testForStatement2 = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testForStatementNoVar1 = (
 
@@ -430,7 +443,6 @@ testForStatementNoVar1 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testFunctionExpression = (
 
     | parsed |
@@ -439,7 +451,6 @@ testFunctionExpression = (
     assert:[(parsed contents at: 1) = nil].
     assert:[((parsed contents at: 2) at: 1) = 'x'].
 )
-
 
 testFunctionExpression2 = (
 
@@ -460,7 +471,6 @@ testFunctionExpression2 = (
     assert: [parsed sameAs: expected].
 )
 
-
 testIfStatement1 = (
 
     |parsed expected|
@@ -477,7 +487,6 @@ testIfStatement1 = (
     
 )
 
-
 testLogicalAnd1 = (
 
     |parsed expected|
@@ -492,7 +501,6 @@ testLogicalAnd1 = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testLogicalOr1 = (
 
@@ -509,7 +517,6 @@ testLogicalOr1 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testMemberExpression = (
 
     | parsed |
@@ -519,7 +526,6 @@ testMemberExpression = (
     assert:[(parsed contents at: 1) = nil].
     assert:[((parsed contents at: 2) at: 1) = 'x'].
 )
-
 
 testMemberExpression2 = (
 
@@ -531,7 +537,6 @@ testMemberExpression2 = (
     assert:[(parsed contents at: 1) = 'a'].
     assert:[(parsed contents at: 2) = 1].
 )
-
 
 testMemberExpression3 = (
 
@@ -565,7 +570,6 @@ testMemberExpression3 = (
     assert:[parsed   sameAs: expected]. 
 )
 
-
 testMixedCallExpression = (
 
     |parsed expected|
@@ -596,7 +600,6 @@ testMixedCallExpression = (
     assert: [parsed sameAs: expected].
 )
 
-
 testMultiplicativeExpression1 = (
 
     |parsed expected|
@@ -612,7 +615,6 @@ testMultiplicativeExpression1 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testMultiplicativeExpression2 = (
 
     |parsed expected|
@@ -621,7 +623,6 @@ testMultiplicativeExpression2 = (
     expected:: 12.
    assert:[parsed = expected]. 
 )
-
 
 testMultiplicativeExpression3 = (
 
@@ -642,7 +643,6 @@ testMultiplicativeExpression3 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testMultiplicativeExpression3WithComments = (
 
     |parsed expected|
@@ -661,7 +661,6 @@ testMultiplicativeExpression3WithComments = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testMultiplicativeExpression3WithLineComment = (
 
@@ -683,14 +682,12 @@ testMultiplicativeExpression3WithLineComment = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testNegativeNumberParsing = (
 
    | result |
      result:: numberParser parse: (streamFromString: '-234').
      assert: [ (flattenCharCollectionToString: result token) = '-234' ].
 )
-
 
 testNewExpression1 = (
 
@@ -705,7 +702,6 @@ testNewExpression1 = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testNewExpression2 = (
 
@@ -724,14 +720,12 @@ testNewExpression2 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testNumberParsing = (
 
    | result |
      result:: numberParser parse: (streamFromString: '1234').
      assert: [ (flattenCharCollectionToString: result token ) = '1234' ].
 )
-
 
 testParenthesizedExpression1 = (
 
@@ -751,7 +745,6 @@ testParenthesizedExpression1 = (
     
 )
 
-
 testPostFixExpression1 = (
 
     |parsed expected|
@@ -766,7 +759,6 @@ testPostFixExpression1 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testPostFixExpression2 = (
 
     |parsed expected|
@@ -775,7 +767,6 @@ testPostFixExpression2 = (
     expected:: 'x'.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testPostFixExpression3 = (
 
@@ -791,7 +782,6 @@ testPostFixExpression3 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testPrimaryExpression = (
 
     |parsed|
@@ -802,7 +792,6 @@ testPrimaryExpression = (
     parsed::   parserWithAST parse: (streamFromString: '"hola2"').
     assert:[parsed = 'hola2'].
 )
-
 
 testRegexMethodCall1 = (
 
@@ -829,7 +818,6 @@ testRegexMethodCall1 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testRelationalExpression1 = (
 
     |parsed expected|
@@ -844,7 +832,6 @@ testRelationalExpression1 = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testRelationalExpression2 = (
 
@@ -861,7 +848,6 @@ testRelationalExpression2 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testRelationalExpression3 = (
 
     |parsed expected|
@@ -876,7 +862,6 @@ testRelationalExpression3 = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testRelationalExpression4 = (
 
@@ -893,7 +878,6 @@ testRelationalExpression4 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testRelationalExpression5 = (
 
     |parsed expected|
@@ -908,7 +892,6 @@ testRelationalExpression5 = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testRelationalExpression6 = (
 
@@ -925,7 +908,6 @@ testRelationalExpression6 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testReturnStatement1 = (
 
     |parsed expected|
@@ -939,7 +921,6 @@ testReturnStatement1 = (
     assert: [parsed sameAs: expected].
 )
 
-
 testReturnStatement2 = (
 
     |parsed expected|
@@ -952,7 +933,6 @@ testReturnStatement2 = (
                }.
     assert: [parsed sameAs: expected].
 )
-
 
 testShiftExpression1 = (
 
@@ -969,7 +949,6 @@ testShiftExpression1 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testShiftExpression2 = (
     |parsed expected|
     parsed:: parserWithAST shiftExpression
@@ -983,7 +962,6 @@ testShiftExpression2 = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testShiftExpression3 = (
 
@@ -1000,14 +978,12 @@ testShiftExpression3 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testSimpleArray = (
 
     |parsed|
     parsed:: arrayParser parse: (streamFromString: '[1,"a",3,4]').
     assert:[(parsed token at: 2)  size = 4].
 )
-
 
 testSimpleCallExpression = (
 
@@ -1023,7 +999,6 @@ testSimpleCallExpression = (
     assert: [parsed sameAs: expected].
 )
 
-
 testSimpleCallExpression2 = (
 
     |parsed expected|
@@ -1038,14 +1013,12 @@ testSimpleCallExpression2 = (
     assert: [parsed sameAs: expected].
 )
 
-
 testSimpleIdentifier = (
 
     | parsed |
     parsed:: parserWithAST parse: (streamFromString: '$hola').
     assert:[parsed = '$hola'].
 )
-
 
 testSimpleObjectWithAst2 = (
 
@@ -1060,7 +1033,6 @@ testSimpleObjectWithAst2 = (
     assert:[parsed sameAs: expected].
 )
 
-
 testSimpleObjectWithAst3 = (
 
     | parsed expected|
@@ -1074,7 +1046,6 @@ testSimpleObjectWithAst3 = (
     assert:[(parsed at: 1) sameAs: expected].
 )
 
-
 testSimpleObjectWithAst4 = (
 
     | parsed expected|
@@ -1087,7 +1058,6 @@ testSimpleObjectWithAst4 = (
          }.
     assert:[parsed sameAs: expected ].
 )
-
 
 testSimpleObjectWithAst5 = (
 
@@ -1105,7 +1075,6 @@ testSimpleObjectWithAst5 = (
    " assert:[((parsed at: 3) isString)  = 'O Brien']."
 )
 
-
 testSimpleObjectWithAst6 = (
 
     | parsed |
@@ -1122,14 +1091,12 @@ testSimpleObjectWithAst6 = (
    " assert:[((parsed at: 3) isString)  = 'O Brien']."
 )
 
-
 testSimpleStringParsing = (
 
    | result |
      result:: stringParser parse: (streamFromString: '"HOLA"').
      assert: [ ((result token at: 2) size) = 4 ].
 )
-
 
 testSwitchStatement1 = (
 
@@ -1153,7 +1120,6 @@ testSwitchStatement1 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testTryStatement = (
 
     |parsed expected|
@@ -1169,7 +1135,6 @@ testTryStatement = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testUnaryExpression1 = (
 
     |parsed expected|
@@ -1178,7 +1143,6 @@ testUnaryExpression1 = (
     expected:: 'x'.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testUnaryExpression2 = (
 
@@ -1194,7 +1158,6 @@ testUnaryExpression2 = (
    assert:[parsed sameAs: expected].
 )
 
-
 testUnaryExpression3 = (
 
     |parsed expected|
@@ -1208,7 +1171,6 @@ testUnaryExpression3 = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testUnaryExpression4 = (
 
@@ -1224,7 +1186,6 @@ testUnaryExpression4 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testUnaryExpression5 = (
 
     |parsed expected|
@@ -1238,7 +1199,6 @@ testUnaryExpression5 = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testUnaryExpression6 = (
 
@@ -1254,7 +1214,6 @@ testUnaryExpression6 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testUnaryExpression7 = (
 
     |parsed expected|
@@ -1269,7 +1228,6 @@ testUnaryExpression7 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testVarStatement1 = (
 
     |parsed expected|
@@ -1283,7 +1241,6 @@ testVarStatement1 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testVarStatement2 = (
 
    |parsed expected|
@@ -1296,7 +1253,6 @@ testVarStatement2 = (
                }.
    assert:[parsed sameAs: expected]. 
 )
-
 
 testVarStatement3 = (
 
@@ -1313,7 +1269,6 @@ testVarStatement3 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 testWhileStatement1 = (
 
     |parsed expected|
@@ -1328,13 +1283,11 @@ testWhileStatement1 = (
    assert:[parsed sameAs: expected]. 
 )
 
-
 'utility'
 arrayParser = (
 
      ^jsParser JSGrammar new array
 )
-
 
 flattenCharCollectionToString: collection = (
  
@@ -1343,7 +1296,6 @@ flattenCharCollectionToString: collection = (
     ^(String withAll: (flatteningCollectedString: collection to: newCollection))
 	    
 )
-
 
 flattenCollectedString: collection = (
  
@@ -1358,7 +1310,6 @@ flattenCollectedString: collection = (
 	    
 )
 
-
 flatteningCollectedString: collection to: newCollection = (
 
     collection do:
@@ -1370,7 +1321,6 @@ flatteningCollectedString: collection to: newCollection = (
 	    
 )
 
-
 getEscapedValue: collection <OrderedCollection> = (
 
      | result | 
@@ -1380,7 +1330,6 @@ getEscapedValue: collection <OrderedCollection> = (
      ^result
 )
 
-
 jsParser = (
 
     |platform parser|
@@ -1389,47 +1338,39 @@ jsParser = (
    ^ parser
 )
 
-
 numberParser = (
 
      ^jsParser JSGrammar new number
 )
-
 
 objectParser = (
 
      ^jsParser JSGrammar new object
 )
 
-
 parserWithAST = (
 
     ^jsParser JSGrammarWithAST new.
 )
-
 
 scParserWithAST = (
 
     ^jsParser  JSCompleteGrammar new.
 )
 
-
 streamFromString: str <String> = (
 
     ^ReadStream on:str from:1 to:(str size).
 )
-
 
 stringParser = (
 
      ^jsParser JSGrammar new string
 )
 
-
 tn: name contents: contents = (
 
    ^(JSParser new) TestingAstNode name: name contents: contents.
 )
 
-
-)
+))
