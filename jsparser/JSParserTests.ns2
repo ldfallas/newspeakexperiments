@@ -55,6 +55,36 @@ testAdditiveExpression1 = (
    assert:[parsed sameAs: expected]. 
 )
 
+testAdditiveExpression2 = (
+
+    |parsed expected|
+    parsed:: parserWithAST expression
+                      parse: (streamFromString: 'x + ++x').   
+    expected:: 
+           tn: #additive
+               contents: {
+                   $+.
+                   'x'.
+                   tn: #unary contents: { '++'. 'x'. }.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+testAdditiveExpression3 = (
+
+    |parsed expected|
+    parsed:: parserWithAST additiveExpression
+                      parse: (streamFromString: 'x+2').   
+    expected:: 
+           tn: #additive
+               contents: {
+                   $+.
+                   'x'.
+                   2.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
 testAutoNoSemiColonInsertion1 = (
 
     |parsed expected code|
@@ -170,10 +200,36 @@ testAutoSemiColonInsertion5 = (
     expected:: 
            tn: #block
                contents: {
-                   'a'.
+                   tn: #expressionStatement
+                     contents: { 'a'. }.
                    tn: #expressionStatement
                      contents: {
-                            tn: #unary contents: { '++'. 'a'. }.
+                            tn: #unary contents: { '++'. 'b'. }.
+                      }.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+testAutoSemiColonInsertion6 = (
+
+    |parsed expected code|
+    code:: '{
+       return
+       x + 2 }'.
+    parsed:: scParserWithAST statement
+                      parse: (streamFromString: code).   
+    expected:: 
+           tn: #block
+               contents: {
+                   tn: #return contents: {}.
+                   tn: #expressionStatement
+                     contents: {
+                            tn: #additive
+                                     contents: {
+                                         $+.
+                                         'x'.
+                                          2.
+                                      }.
                       }.
                }.
    assert:[parsed sameAs: expected]. 
@@ -1355,7 +1411,7 @@ parserWithAST = (
 
 scParserWithAST = (
 
-    ^jsParser  JSCompleteGrammar new.
+    ^jsParser  JSGrammarWithAST new.
 )
 
 streamFromString: str <String> = (

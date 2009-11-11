@@ -13,7 +13,8 @@ class JSParser withParserLib: parserLibrary usingLib: platform =  (
 	Number = platform Number.
 	CollectingCommentParser = parserLibrary CollectingCommentParser.
 	CombinatorialParser = parserLibrary CombinatorialParser.
-	public JSCompleteGrammar =  JSGrammarWithAST mixin |>  JSGrammarWithSemicolonInsertion.
+	Token =  parserLibrary  Token.
+	"public JSCompleteGrammar =  JSGrammarWithAST mixin |>  JSGrammarWithSemicolonInsertion."
 |
 )
 (
@@ -198,6 +199,12 @@ class JSGrammar = ExecutableGrammar (
       plusPlus = plusSign,plusSign.
       minusMinus = negSign,negSign.
 
+      tplusPlus = tplusSign,plusSign.
+      tminusMinus = tnegSign,negSign.
+
+      tplusSignNotPP = tplusSign, ((peek: $+) not).
+      tnegSignNotPP = tnegSign, ((peek: $-) not).
+
       leftHandSideExpression = callExpression | newExpression  .
       postfixExpression = leftHandSideExpression , 
                                            ((plusPlus | minusMinus) star).
@@ -210,15 +217,15 @@ class JSGrammar = ExecutableGrammar (
            (typeof, unaryExpression) |
            (delete, unaryExpression) | 
            (void, unaryExpression) | 
-           (plusPlus, unaryExpression) |
-           (minusMinus, unaryExpression) |
+           (tplusPlus, unaryExpression) |
+           (tminusMinus, unaryExpression) |
            ((tokenFor: ( plusSign | negSign | tilde | exclamation )), unaryExpression).
 
       multiplicativeExpression = 
               unaryExpression, ((tstarChar | tslash | tmodulo), unaryExpression) star.     
 
       additiveExpression = 
-              multiplicativeExpression, ((tplusSign | tnegSign), multiplicativeExpression) star. 
+              multiplicativeExpression, ((tplusSignNotPP | tnegSignNotPP), multiplicativeExpression) star. 
 
       shiftExpression =  
              additiveExpression,  ((tsRightShift | tleftShift |  trightShift), additiveExpression) star.
@@ -350,7 +357,7 @@ class JSGrammar = ExecutableGrammar (
 
       breakStatement = break, (identifier opt), tSemicolon.
 
-      returnStatement = return, (expression opt), tSemicolon.
+      returnStatement = return,(tSemicolon | (expression , tSemicolon)).
 
       withStatement = with, leftparen, expression ,rightparen, statement.
   
@@ -560,11 +567,15 @@ class PeekCharParser for: character= CombinatorialParser (
 |
 )
 ('as yet unclassified'
+errMsg = (
+	^'Failed to peek'
+)
+
 parse: input inContext: context  ifError: blk = (
 | token  |
 token:: input nextIfAbsent:[blk value:errMsg value: input position-1].
 (token = character) 
-  ifFalse:[blk value: errMsg value: input position-1 ].
+  ifFalse:[blk value: errMsg value: input position-1 ]. 
 input position: input position-1.
  ^token.
 )
@@ -575,15 +586,19 @@ class JSGrammarWithSemicolonInsertion = JSGrammar (
 "Parser features that add automatic semicolon insertion"
 |
  
-    specialStatementTermination = (( cr | lf ) not & whitespace ) star,
-                                                     (semicolon | comment | lf | cr | (peek: $})).
+      specialStatementTermination = ((( cr | lf ) not & whitespace ) star,
+                                                     (semicolon | comment | lf | cr | (peek: $})) ) 
+                                                      wrapper: [ :ws :terminator | | t | t:: Token new. t token: $;. t].
+
+      returnStatement =  return, (specialStatementTermination | 
+                                                  (expression , (tSemicolon | specialStatementTermination))).
 
       expressionStatement = (((function | leftbrace) not) & expression), specialStatementTermination.
 | 
 )
 ()
 
-class JSGrammarWithAST = JSGrammar(
+class JSGrammarWithAST = JSGrammarWithSemicolonInsertion (
 "Parses a JS File and generates and Ast"
 |
 	
@@ -1095,11 +1110,12 @@ relationalExpressionNoIn = (
 
 returnStatement = (
 	^super returnStatement 
-	     wrapper: [:r :expression :sc |
+	     wrapper: [:r :expression  |
+
 		       TestingAstNode name: #return
-		           contents: ((expression = nil) 
-		                                ifTrue: [{  }]
-		                                ifFalse: [{ expression  }]
+		           contents: (((expression class name) = #OrderedCollection) 
+		                                ifTrue: [{ expression at: 1 }]
+		                                ifFalse: [{   }]
 		                            )
 		 ]
 )
@@ -1157,6 +1173,22 @@ throwStatement = (
 	^super throwStatement 
 	                  wrapper: [:throw :exp :sc |   
 		                                TestingAstNode name: #throw contents: {exp}. ].
+)
+
+tminusMinus = (
+	^super tminusMinus wrapper: [:m1 :m2 | '--' ].
+)
+
+tnegSignNotPP = (
+	^super tnegSignNotPP wrapper: [:m1 :m2 |  | t | t::Token new. t token: $-. t ].
+)
+
+tplusPlus = (
+	^super tplusPlus wrapper: [:p1 :p2 | '++' ].
+)
+
+tplusSignNotPP = (
+	^super tplusSignNotPP wrapper: [:p1 :p2 |  | t | t::Token new. t token: $+. t ].
 )
 
 tryStatement = (
