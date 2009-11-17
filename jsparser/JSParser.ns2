@@ -296,8 +296,8 @@ class JSGrammar = ExecutableGrammar (
 
       statement = block | variableStatement | emptyStatement | expressionStatement |
                           ifStatement | iterationStatement | withStatement | switchStatement |
-                          labelledStatement | tryStatement | throwStatement | 
-                          breakStatement | returnStatement.
+                          labelledStatement | tryStatement | throwStatement |
+                          continueStatement |  breakStatement | returnStatement.
   
       block = leftbrace, statementList , rightbrace.
 
@@ -593,6 +593,9 @@ class JSGrammarWithSemicolonInsertion = JSGrammar (
       returnStatement =  return, (specialStatementTermination | 
                                                   (expression , (tSemicolon | specialStatementTermination))).
 
+      continueStatement = continue,  (specialStatementTermination | 
+                                                  (identifier , (tSemicolon | specialStatementTermination))). 
+
       expressionStatement = (((function | leftbrace) not) & expression), specialStatementTermination.
 | 
 )
@@ -771,9 +774,12 @@ conditionalExpressionNoIn = (
 
 continueStatement = (
 	^super continueStatement 
-	     wrapper: [:b :id :sc |
+	     wrapper: [:b :id |
 		       TestingAstNode name: #continue
-		           contents: { id }
+		           contents: (((expression class name) = #OrderedCollection) 
+		                                ifTrue: [{ expression at: 1 }]
+		                                ifFalse: [{   }]
+		                            )
 		 ]
 )
 

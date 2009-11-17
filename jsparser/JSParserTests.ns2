@@ -295,6 +295,20 @@ testConditional1 = (
    assert:[parsed sameAs: expected]. 
 )
 
+testContinueStatement = (
+
+    |parsed expected|
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: '{ continue; }').   
+    expected:: 
+           tn: #block
+               contents: {
+                   tn: #continue 
+                      contents:  { }.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
 testDoStatement = (
 
     |parsed expected|
