@@ -353,9 +353,9 @@ class JSGrammar = ExecutableGrammar (
                                        rightparen, statement.
       whileStatement = while,leftparen,expression,rightparen,statement.
 
-      continueStatement = continue, (identifier opt), tSemicolon.
+      continueStatement = continue, (tSemicolon | (identifier , tSemicolon)).
 
-      breakStatement = break, (identifier opt), tSemicolon.
+      breakStatement = break,(tSemicolon | (identifier , tSemicolon)).
 
       returnStatement = return,(tSemicolon | (expression , tSemicolon)).
 
@@ -591,10 +591,16 @@ class JSGrammarWithSemicolonInsertion = JSGrammar (
                                                       wrapper: [ :ws :terminator | | t | t:: Token new. t token: $;. t].
 
       returnStatement =  return, (specialStatementTermination | 
-                                                  (expression , (tSemicolon | specialStatementTermination))).
+                                                  (expression ,  specialStatementTermination)).
+
+      breakStatement = break,  (specialStatementTermination | 
+                                                  (identifier ,  specialStatementTermination)). 
 
       continueStatement = continue,  (specialStatementTermination | 
-                                                  (identifier , (tSemicolon | specialStatementTermination))). 
+                                                  (identifier ,  specialStatementTermination)). 
+
+      throwStatement = throw,  (specialStatementTermination | 
+                                                  (expression ,  specialStatementTermination)). 
 
       expressionStatement = (((function | leftbrace) not) & expression), specialStatementTermination.
 | 
@@ -703,9 +709,12 @@ block = (
 
 breakStatement = (
 	^super breakStatement 
-	     wrapper: [:b :id :sc |
+	     wrapper: [:b :id |
 		       TestingAstNode name: #break
-		           contents: { id }
+		           contents: (((id class name) = #OrderedCollection) 
+		                                ifTrue: [{ id at: 1 }]
+		                                ifFalse: [{   }]
+		                            )
 		 ]
 )
 
@@ -776,8 +785,8 @@ continueStatement = (
 	^super continueStatement 
 	     wrapper: [:b :id |
 		       TestingAstNode name: #continue
-		           contents: (((expression class name) = #OrderedCollection) 
-		                                ifTrue: [{ expression at: 1 }]
+		           contents: (((id class name) = #OrderedCollection) 
+		                                ifTrue: [{ id at: 1 }]
 		                                ifFalse: [{   }]
 		                            )
 		 ]

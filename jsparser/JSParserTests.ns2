@@ -235,6 +235,51 @@ testAutoSemiColonInsertion6 = (
    assert:[parsed sameAs: expected]. 
 )
 
+testAutoSemiColonInsertionBreak1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: '{ break                                                                  
+                                                                }').   
+    expected:: 
+           tn: #block
+               contents: {
+                   tn: #break 
+                      contents:  { }.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+testAutoSemiColonInsertionBreak2 = (
+
+    |parsed expected|
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: '{ break goo                                                                 
+                                                                }').   
+    expected:: 
+           tn: #block
+               contents: {
+                   tn: #break 
+                      contents:  { 'goo' }.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+testAutoSemiColonInsertionContinue = (
+
+    |parsed expected|
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: '{ continue                                                                  
+                                                                }').   
+    expected:: 
+           tn: #block
+               contents: {
+                   tn: #continue 
+                      contents:  { }.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
 testBitAnd1 = (
 
     |parsed expected|
@@ -280,6 +325,34 @@ testBitXor1 = (
    assert:[parsed sameAs: expected]. 
 )
 
+testBreakStatement1 = (
+
+    |parsed expected|
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: '{ break; }').   
+    expected:: 
+           tn: #block
+               contents: {
+                   tn: #break 
+                      contents:  { }.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+testBreakStatement2 = (
+
+    |parsed expected|
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: '{ break foo; }').   
+    expected:: 
+           tn: #block
+               contents: {
+                   tn: #break 
+                      contents:  { 'foo' }.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
 testConditional1 = (
 
     |parsed expected|
@@ -305,6 +378,20 @@ testContinueStatement = (
                contents: {
                    tn: #continue 
                       contents:  { }.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+testContinueStatement2 = (
+
+    |parsed expected|
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: '{ continue foo; }').   
+    expected:: 
+           tn: #block
+               contents: {
+                   tn: #continue 
+                      contents:  { 'foo' }.
                }.
    assert:[parsed sameAs: expected]. 
 )
