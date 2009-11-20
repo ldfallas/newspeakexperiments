@@ -60,7 +60,7 @@ class ASTPresenter = Presenter (
 |
 )
 ('as yet unclassified'
-definition = ( "break."
+definition = (
 	^(subject root respondsTo: #contents )
 	   ifTrue: [ heading: [label: (subject root name asString)]
 		           details: [ column: ( subject root contents collect: [:e | (ASTSubject tree: e) createPresenter]) ] ]
@@ -68,8 +68,8 @@ definition = ( "break."
 )
 
 )'as yet unclassified'
-definition = ( ^label: 'a'.
- "    editor:: textEditor. 
+definition = ( 
+     editor:: textEditor. 
      editor text: 'var x = 1;'.
      astHolder:: holder: [
 
@@ -85,7 +85,7 @@ definition = ( ^label: 'a'.
 		                 astHolder refresh.
 		           ].
 	                astHolder.
-	                 }"
+	                 }
 )
 
 parseText: programText = (

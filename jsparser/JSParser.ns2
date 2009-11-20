@@ -19,6 +19,23 @@ class JSParser withParserLib: parserLibrary usingLib: platform =  (
 )
 (
 
+class JSObject withContent: dContent =  (
+"Instances of this class represent JS objects."
+|
+	content = dContent.
+|
+)
+('as yet unclassified'
+doesNotUnderstand: message = (
+      | fieldName |
+      fieldName:: message selector string.
+      (fieldName beginsWith: 'json_')  
+             ifTrue: [fieldName:: fieldName allButFirst: 5].
+	^content  at: fieldName ifAbsent: [nil].
+)
+
+)
+
 class JSGrammar = ExecutableGrammar (
 "Experiment for JS grammar based on the description from http://www.ecma-international.org/publications/standards/Ecma-262.htm"
 |
@@ -107,113 +124,113 @@ class JSGrammar = ExecutableGrammar (
                       (charExceptForCharIn: { (Character lf).  (Character cr). $/.})) plus),
                       slash, (identifierStart star).
 
-      leftparen = tokenFromChar: $(.
-      rightparen =tokenFromChar: $).	
+     leftparen = tokenFromChar: $(.
+     rightparen =tokenFromChar: $).	
 	
-      leftbrace = tokenFromChar: ${.
-      rightbrace =tokenFromChar: $}.
-      comma = tokenFromChar: $,.
-      propertyName = string | identifier | number.
-      propertyNameAndValue = propertyName,tColon,value.
-      obj =  leftbrace,  (propertyNameAndValue starSeparatedBy: comma),rightbrace.
-      object =  obj.
+     leftbrace = tokenFromChar: ${.
+     rightbrace =tokenFromChar: $}.
+     comma = tokenFromChar: $,.
+     propertyName = string | identifier | number.
+     propertyNameAndValue = propertyName,tColon,value.
+     obj =  leftbrace,  (propertyNameAndValue starSeparatedBy: comma),rightbrace.
+     object =  obj.
 
-      leftbracket = tokenFromChar: $[.
-	rightbracket = tokenFromChar: $].
-      arr = leftbracket, (value starSeparatedBy: comma), rightbracket.
-      array = tokenFor: arr.
+     leftbracket = tokenFromChar: $[.
+     rightbracket = tokenFromChar: $].
+     arr = leftbracket, (value starSeparatedBy: comma), rightbracket.
+     array = tokenFor: arr.
 
       comment = (slash,starChar,blockCommentBody,starChar,slash) | (slash,slash, lineCommentBody).
 
 
-      ttrue = tokenFromSymbol: #true.
-      tfalse = tokenFromSymbol: #false.
-      null = tokenFromSymbol: #null.
-      function = tokenFromSymbol: #function.
-      tnew = tokenFromSymbol: #new.
-      break = tokenFromSymbol: #break.
-      case = tokenFromSymbol: #case.
-      catch = tokenFromSymbol: #catch.
-      continue = tokenFromSymbol: #continue.
-      default = tokenFromSymbol: #default.
-      delete = tokenFromSymbol: #delete.
-      do = tokenFromSymbol: #do.
-      else = tokenFromSymbol: #else.
-      finally = tokenFromSymbol: #finally.
-      for = tokenFromSymbol: #for.
-      if = tokenFromSymbol: #if.
-      in = tokenFromSymbol: #in.
-      instanceof = tokenFromSymbol: #instanceof.
-      return = tokenFromSymbol: #return.
-      switch = tokenFromSymbol: #switch.
-      this = tokenFromSymbol: #this.
-      throw = tokenFromSymbol: #throw.
-      try = tokenFromSymbol: #try.
-      typeof  = tokenFromSymbol: #typeof.
-      var = tokenFromSymbol: #var.
-      void = tokenFromSymbol: #void.
-      while = tokenFromSymbol: #while.
-      with = tokenFromSymbol: #with.
+     ttrue = tokenFromSymbol: #true.
+     tfalse = tokenFromSymbol: #false.
+     null = tokenFromSymbol: #null.
+     function = tokenFromSymbol: #function.
+     tnew = tokenFromSymbol: #new.
+     break = tokenFromSymbol: #break.
+     case = tokenFromSymbol: #case.
+     catch = tokenFromSymbol: #catch.
+     continue = tokenFromSymbol: #continue.
+     default = tokenFromSymbol: #default.
+     delete = tokenFromSymbol: #delete.
+     do = tokenFromSymbol: #do.
+     else = tokenFromSymbol: #else.
+     finally = tokenFromSymbol: #finally.
+     for = tokenFromSymbol: #for.
+     if = tokenFromSymbol: #if.
+     in = tokenFromSymbol: #in.
+     instanceof = tokenFromSymbol: #instanceof.
+     return = tokenFromSymbol: #return.
+     switch = tokenFromSymbol: #switch.
+     this = tokenFromSymbol: #this.
+     throw = tokenFromSymbol: #throw.
+     try = tokenFromSymbol: #try.
+     typeof  = tokenFromSymbol: #typeof.
+     var = tokenFromSymbol: #var.
+     void = tokenFromSymbol: #void.
+     while = tokenFromSymbol: #while.
+     with = tokenFromSymbol: #with.
 
       
  
-      letter = (charBetween: $a and: $z) | (charBetween: $A and: $Z).
-      identifierStart =  letter | (char: $$) | (char: $_).
-      identifier = accept: (tokenFor: (identifierStart), (identifierStart | digit) star) ifNotIn: keywords .
+     letter = (charBetween: $a and: $z) | (charBetween: $A and: $Z).
+     identifierStart =  letter | (char: $$) | (char: $_).
+     identifier = accept: (tokenFor: (identifierStart), (identifierStart | digit) star) ifNotIn: keywords .
 
-      value =  assignmentExpression .      
+     value =  assignmentExpression .      
   
-      literal  = null | ttrue | tfalse | number | string |  regularExpressionLiteral.
+     literal  = null | ttrue | tfalse | number | string |  regularExpressionLiteral.
 
-      primaryexpression  = this |  literal | identifier | array | object | parenthesized.
+     primaryexpression  = this |  literal | identifier | array | object | parenthesized.
 
-      parenthesized = leftparen,expression,rightparen.
+     parenthesized = leftparen,expression,rightparen.
 
-      functionexpression = function , identifier opt, 
+     functionexpression = function , identifier opt, 
                                        leftparen,formalParameterList , rightparen ,
                                        leftbrace,sourceElements,rightbrace.
-      formalParameterList = identifier starSeparatedBy: comma. 
+     formalParameterList = identifier starSeparatedBy: comma. 
 
-      memberexpression =   (simplememberexpression  ),
+     memberexpression =   (simplememberexpression  ),
                                          (( leftbracket, expression, rightbracket) | ( tdot, identifier)) star.
      
      simplememberexpression = primaryexpression | 
                                                functionexpression  |                        
                                                 simpleNewExpression.
-      simpleNewExpression = tnew,memberexpression, arguments.
+     simpleNewExpression = tnew,memberexpression, arguments.
 
       
   
-      callExpression =  (simplememberexpression  ),
+     callExpression =  (simplememberexpression  ),
                                  ( arguments |
                                   ( leftbracket, expression, rightbracket) | 
                                   ( tdot, identifier)  ) star.
-      simpleCallExpression = memberexpression , arguments.
-      arguments = leftparen ,
+     simpleCallExpression = memberexpression , arguments.
+     arguments = leftparen ,
                           (assignmentExpression, (comma, assignmentExpression) star) opt, 
                           rightparen.
 
-      newExpression = memberexpression | simpleNewMemberExpression.
-      simpleNewMemberExpression = tnew, memberexpression.
+     newExpression = memberexpression | simpleNewMemberExpression.
+     simpleNewMemberExpression = tnew, memberexpression.
  
-      plusPlus = plusSign,plusSign.
-      minusMinus = negSign,negSign.
+     plusPlus = plusSign,plusSign.
+     minusMinus = negSign,negSign.
 
-      tplusPlus = tplusSign,plusSign.
-      tminusMinus = tnegSign,negSign.
+     tplusPlus = tplusSign,plusSign.
+     tminusMinus = tnegSign,negSign.
 
-      tplusSignNotPP = tplusSign, ((peek: $+) not).
-      tnegSignNotPP = tnegSign, ((peek: $-) not).
+     tplusSignNotPP = tplusSign, ((peek: $+) not).
+     tnegSignNotPP = tnegSign, ((peek: $-) not).
 
-      leftHandSideExpression = callExpression | newExpression  .
-      postfixExpression = leftHandSideExpression , 
+     leftHandSideExpression = callExpression | newExpression  .
+     postfixExpression = leftHandSideExpression , 
                                            ((plusPlus | minusMinus) star).
 
 
-      unaryExpression =
+     unaryExpression =
           postfixExpression | complexUnaryExpression.
 
-      complexUnaryExpression = 
+     complexUnaryExpression = 
            (typeof, unaryExpression) |
            (delete, unaryExpression) | 
            (void, unaryExpression) | 
@@ -221,77 +238,77 @@ class JSGrammar = ExecutableGrammar (
            (tminusMinus, unaryExpression) |
            ((tokenFor: ( plusSign | negSign | tilde | exclamation )), unaryExpression).
 
-      multiplicativeExpression = 
+     multiplicativeExpression = 
               unaryExpression, ((tstarChar | tslash | tmodulo), unaryExpression) star.     
 
-      additiveExpression = 
+     additiveExpression = 
               multiplicativeExpression, ((tplusSignNotPP | tnegSignNotPP), multiplicativeExpression) star. 
 
-      shiftExpression =  
+     shiftExpression =  
              additiveExpression,  ((tsRightShift | tleftShift |  trightShift), additiveExpression) star.
       
-      relationalExpression =
+     relationalExpression =
             shiftExpression, ((  tLtEq | tGtEq | tLt | tGt | instanceof | in) , shiftExpression)  star.
 
-      relationalExpressionNoIn =
+     relationalExpressionNoIn =
             shiftExpression, ((  tLtEq | tGtEq | tLt | tGt | instanceof ) , shiftExpression)  star. 
 
-      equalityExpression =
+     equalityExpression =
             relationalExpression, ((tEqEqEq | tEqEq | tNotEqEq | tNotEq ), relationalExpression) star.
 
-      equalityExpressionNoIn =
+     equalityExpressionNoIn =
             relationalExpressionNoIn, ((tEqEqEq | tEqEq | tNotEqEq | tNotEq ), relationalExpressionNoIn) star.
 
-      bitwiseANDExpression =
+     bitwiseANDExpression =
            equalityExpression,(tAmp, equalityExpression) star.
 
-      bitwiseANDExpressionNoIn =
+     bitwiseANDExpressionNoIn =
            equalityExpressionNoIn,(tAmp, equalityExpressionNoIn) star.
 
-      bitwiseXORExpression =
+     bitwiseXORExpression =
            bitwiseANDExpression,(tCir, bitwiseANDExpression) star.
 
-      bitwiseXORExpressionNoIn =
+     bitwiseXORExpressionNoIn =
            bitwiseANDExpressionNoIn,(tCir, bitwiseANDExpressionNoIn) star.
 
-      bitwiseORExpression =
+     bitwiseORExpression =
            bitwiseXORExpression,(tPipe, bitwiseXORExpression) star.
 
-      bitwiseORExpressionNoIn =
+     bitwiseORExpressionNoIn =
            bitwiseXORExpressionNoIn,(tPipe, bitwiseXORExpressionNoIn) star.
 
-      logicalAndExpression = 
+     logicalAndExpression = 
            bitwiseORExpression, (tAmpAmp,bitwiseORExpression) star.
 
-      logicalAndExpressionNoIn = 
+     logicalAndExpressionNoIn = 
            bitwiseORExpressionNoIn, (tAmpAmp,bitwiseORExpressionNoIn) star.
 
-      logicalOrExpression = 
+     logicalOrExpression = 
            logicalAndExpression, (tPipePipe,logicalAndExpression) star.
 
-      logicalOrExpressionNoIn = 
+     logicalOrExpressionNoIn = 
            logicalAndExpressionNoIn, (tPipePipe,logicalAndExpressionNoIn) star.
 
-      assignmentOperator = 
+     assignmentOperator = 
               tEq | tStarEq | tSlashEq | tModEq | tPlusEq | tMinusEq |
               tleftShiftEq | tsRightShiftEq | trightShiftEq | tAmpEq | tPipeEq |
               tCirEq.
  
-      conditionalExpression =
+     conditionalExpression =
             logicalOrExpression, (tQuestion, assignmentExpression,tColon,assignmentExpression) opt.
 
-      assignmentExpression =    
+     assignmentExpression =    
            conditionalExpression, (assignmentOperator,conditionalExpression) star.
 
-      conditionalExpressionNoIn =
+     conditionalExpressionNoIn =
             logicalOrExpressionNoIn, (tQuestion, assignmentExpressionNoIn,tColon,assignmentExpressionNoIn) opt.
 
-      assignmentExpressionNoIn =    
+     assignmentExpressionNoIn =    
            conditionalExpressionNoIn, (assignmentOperator,conditionalExpressionNoIn) star.
 
-      expression = assignmentExpression, (comma , assignmentExpression) star.
+     expression = assignmentExpression, (comma , assignmentExpression) star.
 
-      expressionNoIn = assignmentExpressionNoIn, (comma , assignmentExpressionNoIn) star.
+     expressionNoIn = assignmentExpressionNoIn, (comma , assignmentExpressionNoIn) star.
 
 
       statement = block | variableStatement | emptyStatement | expressionStatement |
@@ -361,25 +378,25 @@ class JSGrammar = ExecutableGrammar (
 
       withStatement = with, leftparen, expression ,rightparen, statement.
   
-       switchStatement = switch ,leftparen,expression,rightparen, clauseBlock.
+      switchStatement = switch ,leftparen,expression,rightparen, clauseBlock.
 
-       clauseBlock = leftbrace,(clause star),(defaultClause opt),rightbrace.
+      clauseBlock = leftbrace,(clause star),(defaultClause opt),rightbrace.
 
-       clause = case, expression, tColon,statementList.
+      clause = case, expression, tColon,statementList.
          
-        defaultClause = default,tColon, statementList.
+       defaultClause = default,tColon, statementList.
 
-        labelledStatement = identifier,tColon,statement.
+       labelledStatement = identifier,tColon,statement.
         
-        throwStatement = throw,expression,tSemicolon.
+       throwStatement = throw,whitespace,expression,tSemicolon.
  
-        tryStatement = try, block, (catchBlock opt), (finallyBlock opt).
+       tryStatement = try, block, (catchBlock opt), (finallyBlock opt).
 
-         catchBlock = catch, leftparen, identifier,rightparen, block.
+        catchBlock = catch, leftparen, identifier,rightparen, block.
 
-         finallyBlock = finally, block.
+        finallyBlock = finally, block.
 
-         functionDeclaration = function,identifier,
+        functionDeclaration = function,identifier,
                                            leftparen,formalParameterList,rightparen,
                                            leftbrace,sourceElements,rightbrace.
 
@@ -444,23 +461,6 @@ peek: c = (
 
 )
 
-class JSObject withContent: dContent =  (
-"Instances of this class represent JS objects."
-|
-	content = dContent.
-|
-)
-('as yet unclassified'
-doesNotUnderstand: message = (
-      | fieldName |
-      fieldName:: message selector string.
-      (fieldName beginsWith: 'json_')  
-             ifTrue: [fieldName:: fieldName allButFirst: 5].
-	^content  at: fieldName ifAbsent: [nil].
-)
-
-)
-
 class CharExceptForParser = PredicateTokenParser (
 "Parses any character expect for the specified."
 |
@@ -516,6 +516,28 @@ parse: input inContext: ctxt  ifError: blk = (
 
 )
 
+class PeekCharParser for: character= CombinatorialParser (
+"Parser for detecting a character without consuming it"
+|
+	character = character.
+|
+)
+('as yet unclassified'
+errMsg = (
+	^'Failed to peek'
+)
+
+parse: input inContext: context  ifError: blk = (
+| token  |
+token:: input nextIfAbsent:[blk value:errMsg value: input position-1].
+(token = character) 
+  ifFalse:[blk value: errMsg value: input position-1 ]. 
+input position: input position-1.
+ ^token.
+)
+
+)
+
 class TestingAstNode name: theName contents: theContent = (
 "Ast node used for parser tests"
 |
@@ -560,28 +582,6 @@ sameAs: other = (
 
 )
 
-class PeekCharParser for: character= CombinatorialParser (
-"Parser for detecting a character without consuming it"
-|
-	character = character.
-|
-)
-('as yet unclassified'
-errMsg = (
-	^'Failed to peek'
-)
-
-parse: input inContext: context  ifError: blk = (
-| token  |
-token:: input nextIfAbsent:[blk value:errMsg value: input position-1].
-(token = character) 
-  ifFalse:[blk value: errMsg value: input position-1 ]. 
-input position: input position-1.
- ^token.
-)
-
-)
-
 class JSGrammarWithSemicolonInsertion = JSGrammar (
 "Parser features that add automatic semicolon insertion"
 |
@@ -599,8 +599,11 @@ class JSGrammarWithSemicolonInsertion = JSGrammar (
       continueStatement = continue,  (specialStatementTermination | 
                                                   (identifier ,  specialStatementTermination)). 
 
-      throwStatement = throw,  (specialStatementTermination | 
-                                                  (expression ,  specialStatementTermination)). 
+      whitespaceNoEOL = (( cr | lf ) not & whitespace ) star,
+                                         (((peek: (Character cr)) | (peek: (Character lf))) not) .
+
+      throwStatement = throw,  whitespaceNoEOL , 
+                                              expression ,  specialStatementTermination. 
 
       expressionStatement = (((function | leftbrace) not) & expression), specialStatementTermination.
 | 
@@ -1186,8 +1189,8 @@ this = (
 
 throwStatement = (
 	^super throwStatement 
-	                  wrapper: [:throw :exp :sc |   
-		                                TestingAstNode name: #throw contents: {exp}. ].
+	                  wrapper: [:throw :ws :exp :sc |   
+		                                TestingAstNode name: #throw contents: {exp. }. ].
 )
 
 tminusMinus = (

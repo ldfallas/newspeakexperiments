@@ -235,6 +235,19 @@ testAutoSemiColonInsertion6 = (
    assert:[parsed sameAs: expected]. 
 )
 
+testAutoSemiColonInsertion7 = (
+
+  | code failed|
+    failed:: false.
+    code:: '{
+      throw
+      a; }'.
+    [ scParserWithAST statement
+                      parse: (streamFromString: code) ] on: Error do: [failed:: true].   
+
+   assert:[failed]. 
+)
+
 testAutoSemiColonInsertionBreak1 = (
 
     |parsed expected|
@@ -1273,6 +1286,19 @@ testSwitchStatement1 = (
                    tn: #defaultCase contents: {  
                            tn:#expressionStatement 
                                  contents: { tn: #call contents: { 'print'. { 'b'} }}}.
+               }.
+   assert:[parsed sameAs: expected]. 
+)
+
+testThrowStatement = (
+
+    |parsed expected|
+    parsed:: parserWithAST statement
+                      parse: (streamFromString: 'throw a;').   
+    expected:: 
+           tn: #throw
+               contents: {
+                  'a'.
                }.
    assert:[parsed sameAs: expected]. 
 )
