@@ -606,6 +606,9 @@ class JSGrammarWithSemicolonInsertion = JSGrammar (
                                               expression ,  specialStatementTermination. 
 
       expressionStatement = (((function | leftbrace) not) & expression), specialStatementTermination.
+
+      variableStatement = var, variableDeclarationList, specialStatementTermination.
+
 | 
 )
 ()
