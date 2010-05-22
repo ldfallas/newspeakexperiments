@@ -1,0 +1,477 @@
+Newsqueak2
+'LangexplrExperiments'
+
+class BaseXmlParser withParserLib: parserLibrary usingLib: platform =  (
+"Base XML 1.0 grammar"
+|
+	ExecutableGrammar = parserLibrary ExecutableGrammar.
+      Number = platform Number.
+      Dictionary = platform Dictionary.
+      PredicateTokenParser = parserLibrary PredicateTokenParser.
+	protected Unicode = platform Unicode.
+      entitiesCollection
+|
+)
+(
+
+class XmlParserWithTestingAst = XmlGrammar (
+"Basic XmlParser with ast for testing"
+|
+	
+	
+|)
+('as yet unclassified'
+Attribute = (
+	^ super Attribute wrapper: [:name :eq :value | {name. value.}].
+)
+
+AttributeValue = (
+      |flattenString|
+	^ super AttributeValue 
+                        wrapper: [:q1 :chars :q2 | 
+                                          flattenString:: (chars collect: 
+                                                                          [:c | (c isString) 
+                                                                                      ifTrue: [c at: 1] 
+                                                                                      ifFalse: [c]]).
+                                          String withAll:flattenString  ].
+)
+
+CDSect = (
+	^ super CDSect wrapper: [:cs :data :ce | String withAll: data].
+)
+
+CDStart= (
+	^ super CDStart  wrapper: [:t :e :b1 :cdata :b2 | 'cdatastart'].
+)
+
+CharData = (
+	^ super CharData wrapper: [:chars | String withAll: (chars token ) ].
+
+)
+
+CharRef = (
+      |numberStr|
+	^ super CharRef 
+                      wrapper: [:a1 :p :numberChars :sc | 
+                           |base| 
+                           numberStr:: ((numberChars at: 1) = $x) 
+                                                     ifTrue: [base:: 16.
+                                                                String withAll: (numberChars at: 2)]
+                                                     ifFalse: [base:: 10.
+                                                                  String withAll: numberChars].
+
+                           (Unicode value: (Number readFrom: numberStr base: base)) asString
+                       ].
+)
+
+ComplexElement = (
+      |tn attCollection|
+      tn:: TestNodes new.
+      attCollection:: tn Attributes new.
+	^ super ComplexElement 
+                     wrapper: [:s :childNodes :e | 
+                                        (e asString = s name asString) ifFalse: [error: 'Open tag different from closing tag'].
+                                        s childNodes: childNodes.
+                                        s].
+)
+
+ETag = (
+	^ super ETag wrapper: [:o :s :name :c | name].
+)
+
+EmptyElemTag = (
+      |tn attCollection|
+      tn:: TestNodes new.
+      attCollection:: tn Attributes new.
+	^super EmptyElemTag 
+                     wrapper: [:oab :name :atts :s :cab | 
+                                          atts do: [:att | attCollection addAttributeWithQName: ((att at: 1) token) value: (att at:2)].
+                                          tn Element name: name attributes: attCollection childNodes:{} ].
+)
+
+EntityRef = (
+	^ super EntityRef 
+                         wrapper: [:a :name :sc | 
+                                         (entities  valueForName: ((name at: 1) at: 1)) asString ].
+)
+
+Name = (
+	^ super Name  wrapper: [:startChar :rest | { { (startChar asString), (String withAll: rest) } } ].
+)
+
+QName = (
+      |tn|
+      tn:: TestNodes new.
+	^ super QName  wrapper: [ :data | ((data size) = 3) 
+                                                           ifTrue:[tn QualifiedName prefix: ((data at:1) at: 1) 
+                                                                           localPart:((data at: 1) at:3)]
+                                                           ifFalse:[tn QualifiedName prefix: nil localPart: (data at: 1)]]
+)
+
+STag = (
+      |tn attCollection|
+      tn:: TestNodes new.
+      attCollection:: tn Attributes new.
+	^super STag 
+                     wrapper: [:oab :name :atts :cab | 
+                                          atts do: [:att | attCollection addAttributeWithQName: ((att at: 1) token) value: (att at:2)].
+                                          tn Element name: name attributes: attCollection childNodes:{} ].
+)
+
+VersionInfo = (
+	^super VersionInfo 
+                    wrapper: [:v :e :versionTextList | versionTextList at: 2].
+)
+
+VersionNum = ( 
+	^super VersionNum  
+                     wrapper: [:one :dot :num | 
+                                          Number 
+                                               readFrom: (String withAll: {one.dot},(String withAll: num))].
+)
+
+XMLDecl = (
+      |tn|
+      tn:: TestNodes new.
+	^super XMLDecl 
+                     wrapper: [:c1 :c2 :x :versionInfo :enc :sd :c3 :c4 | 
+
+                                    tn TAstXmlDecl version: versionInfo 
+                                                         encoding: enc
+                                                         standalone: sd] .
+)
+
+content = (
+      |result|
+
+	^ super content wrapper: [:chars :cseq |
+                   (chars = nil) 
+                       ifTrue: [result:: {}] 
+                       ifFalse: [result:: {chars}].
+                   cseq inject: result into: [:total :current  |  
+                               result::  addCompactingStrings: (current at: 1) to: result  .
+                               (current at: 2) ifNotNil: [:c | addCompactingStrings: c to: result   ].
+                               result ].
+         ].
+)
+
+'utility'
+addCompactingStrings: element to: collection  = (
+	^((element isString)
+           and: [collection size > 0]
+           and: [(collection at: (collection size)) isString])
+          ifTrue: [ collection at: (collection size) 
+                                   put:((collection at: (collection size)) , element)  .
+                      collection]
+          ifFalse: [collection , {element}]
+)
+
+)
+
+class Entities = (
+"Containts definitions for XML entities"
+|
+	entitiesDict
+|
+)
+('as yet unclassified'
+addAccents = (
+	{   {'Agrave'. 192.}.  {'Aacute'. 193.}.  {'Acirc'. 194.}.  {'Atilde'. 195.}.  {'Auml'. 196.}.  {'Aring'. 197.}.
+   {'AElig'. 198.}.  {'Ccedil'. 199.}.  {'Egrave'. 200.}.  {'Eacute'. 201.}.  {'Ecirc'. 202.}.  {'Euml'. 203.}.
+   {'Igrave'. 204.}.  {'Iacute'. 205.}.  {'Icirc'. 206.}.  {'Iuml'. 207.}.  {'ETH'. 208.}.  {'Ntilde'. 209.}.
+   {'Ograve'. 210.}.  {'Oacute'. 211.}.  {'Ocirc'. 212.}.  {'Otilde'. 213.}.  {'Ouml'. 214.}.  {'times'. 215.}.
+   {'Oslash'. 216.}.  {'Ugrave'. 217.}.  {'Uacute'. 218.}.  {'Ucirc'. 219.}.  {'Uuml'. 220.}.
+   {'Yacute'. 221.}.  {'THORN'. 222.}.  {'szlig'. 223.}.  {'agrave'. 224.}.  {'aacute'. 225.}.
+   {'acirc'. 226.}.  {'atilde'. 227.}.  {'auml'. 228.}.  {'aring'. 229.}.  {'aelig'. 230.}.  {'ccedil'. 231.}.
+   {'egrave'. 232.}.  {'eacute'. 233.}.  {'ecirc'. 234.}.  {'euml'. 235.}.  {'igrave'. 236.}.
+   {'iacute'. 237.}.  {'icirc'. 238.}.  {'iuml'. 239.}.  {'eth'. 240.}.  {'ntilde'. 241.}. 
+   {'ograve'. 242.}.  {'oacute'. 243.}.  {'ocirc'. 244.}.  {'otilde'. 245.}.  {'ouml'. 246.}.  {'divide'. 247.}.
+   {'oslash'. 248.}.  {'ugrave'. 249.}.  {'uacute'. 250.}.  {'ucirc'. 251.}.  {'uuml'. 252.}.
+   {'yacute'. 253.}.  {'thorn'. 254.}.  {'yuml'. 255.}.}do: [:pair | entitiesDict add: ((pair at: 1) -> (Unicode value: (pair at: 2)))].
+
+)
+
+addCards = (
+	{ {'spades'. 9824.}.
+   {'clubs'. 9827.}.
+   {'hearts'. 9829.}.
+   {'diams'. 9830.}.} do: [:pair | entitiesDict add: ((pair at: 1) -> (Unicode value: (pair at: 2)))].
+
+)
+
+addMathCurrency = (
+	{{'ndash'. 8211.}.  {'mdash'. 8212.}.  {'lsquo'. 8216.}.  {'rsquo'. 8217.}.  {'sbquo'. 8218.}.
+   {'ldquo'. 8220.}.  {'rdquo'. 8221.}.  {'bdquo'. 8222.}.  {'dagger'. 8224.}.  {'Dagger'. 8225.}.
+   {'bull'. 8226.}.  {'hellip'. 8230.}.  {'permil'. 8240.}.  {'prime'. 8242.}.  {'Prime'. 8243.}.
+   {'lsaquo'. 8249.}.  {'rsaquo'. 8250.}.  {'oline'. 8254.}.  {'frasl'. 8260.}.  {'euro'. 8364.}.
+   {'image'. 8465.}.  {'weierp'. 8472.}.  {'real'. 8476.}.  {'trade'. 8482.}.  {'alefsym'. 8501.}.
+   {'larr'. 8592.}.  {'uarr'. 8593.}.  {'rarr'. 8594.}.  {'darr'. 8595.}.
+   {'harr'. 8596.}.  {'crarr'. 8629.}.  {'lArr'. 8656.}.  {'uArr'. 8657.}.
+   {'rArr'. 8658.}.  {'dArr'. 8659.}.  {'hArr'. 8660.}.  {'forall'. 8704.}.
+   {'part'. 8706.}.  {'exist'. 8707.}.  {'empty'. 8709.}.  {'nabla'. 8711.}.
+   {'isin'. 8712.}.  {'notin'. 8713.}.  {'ni'. 8715.}.
+   {'prod'. 8719.}.  {'sum'. 8721.}.  {'minus'. 8722.}.  {'lowast'. 8727.}.
+   {'radic'. 8730.}.  {'prop'. 8733.}.  {'infin'. 8734.}.  {'ang'. 8736.}.  {'and'. 8743.}.
+   {'or'. 8744.}.  {'cap'. 8745.}.  {'cup'. 8746.}.  {'int'. 8747.}.  {'there4'. 8756.}.
+   {'sim'. 8764.}.  {'cong'. 8773.}.  {'asymp'. 8776.}.  {'ne'. 8800.}.  {'equiv'. 8801.}.
+   {'le'. 8804.}.  {'ge'. 8805.}.  {'sub'. 8834.}.  {'sup'. 8835.}.  {'nsub'. 8836.}.
+   {'sube'. 8838.}.  {'supe'. 8839.}.  {'oplus'. 8853.}.  {'otimes'. 8855.}.  {'perp'. 8869.}.
+   {'sdot'. 8901.}.  {'lceil'. 8968.}.  {'rceil'. 8969.}.  {'lfloor'. 8970.}.
+   {'rfloor'. 8971.}.  {'lang'. 9001.}.  {'rang'. 9002.}.  {'loz'. 9674.}.}do: [:pair | entitiesDict add: ((pair at: 1) -> (Unicode value: (pair at: 2)))].
+
+)
+
+addSpecialAndGreek = (
+	{{'OElig'. 338.}.  {'oelig'. 339.}.  {'Scaron'. 352.}.  {'scaron'. 353.}.  {'Yuml'. 376.}.
+   {'fnof'. 402.}.  {'circ'. 710.}.  {'tilde'. 732.}.  {'Alpha'. 913.}.  {'Beta'. 914.}.
+   {'Gamma'. 915.}.  {'Delta'. 916.}.  {'Epsilon'. 917.}.  {'Zeta'. 918.}.  {'Eta'. 919.}.
+   {'Theta'. 920.}.  {'Iota'. 921.}.  {'Kappa'. 922.}.  {'Lambda'. 923.}.  {'Mu'. 924.}.
+   {'Nu'. 925.}.  {'Xi'. 926.}.  {'Omicron'. 927.}.  {'Pi'. 928.}.  {'Rho'. 929.}.
+   {'Sigma'. 931.}.  {'Tau'. 932.}.  {'Upsilon'. 933.}.  {'Phi'. 934.}.  {'Chi'. 935.}.
+   {'Psi'. 936.}.  {'Omega'. 937.}.  {'alpha'. 945.}.  {'beta'. 946.}.  {'gamma'. 947.}.
+   {'delta'. 948.}.  {'epsilon'. 949.}.  {'zeta'. 950.}.  {'eta'. 951.}.  {'theta'. 952.}.
+   {'iota'. 953.}.  {'kappa'. 954.}.  {'lambda'. 955.}.  {'mu'. 956.}.  {'nu'. 957.}.  {'xi'. 958.}.
+   {'omicron'. 959.}.  {'pi'. 960.}.  {'rho'. 961.}.  {'sigmaf'. 962.}.  {'sigma'. 963.}.
+   {'tau'. 964.}.  {'upsilon'. 965.}.  {'phi'. 966.}.  {'chi'. 967.}.  {'psi'. 968.}.
+   {'omega'. 969.}.  {'thetasym'. 977.}.  {'upsih'. 978.}.  {'piv'. 982.}.  {'ensp'. 8194.}.
+   {'emsp'. 8195.}.  {'thinsp'. 8201.}.  {'zwnj'. 8204.}.  {'zwj'. 8205.}.  {'lrm'. 8206.}.
+   {'rlm'. 8207.}.}  do: [:pair | entitiesDict add: ((pair at: 1) -> (Unicode value: (pair at: 2)))].
+
+)
+
+addSymbols = (
+{  {'quot'. 34.}.  {'amp'. 38.}.  {'apos'. 39.}.  {'lt'. 60.}.  {'gt'. 62.}.  {'nbsp'. 160.}.
+   {'iexcl'. 161.}.  {'cent'. 162.}.  {'pound'. 163.}.  {'curren'. 164.}.  {'yen'. 165.}.
+   {'brvbar'. 166.}.  {'sect'. 167.}.  {'uml'. 168.}.  {'copy'. 169.}.  {'ordf'. 170.}.
+   {'laquo'. 171.}.  {'not'. 172.}.  {'shy'. 173.}.  {'reg'. 174.}.  {'macr'. 175.}.
+   {'deg'. 176.}.  {'plusmn'. 177.}.  {'sup2'. 178.}.  {'sup3'. 179.}.  {'acute'. 180.}.
+   {'micro'. 181.}.  {'para'. 182.}.  {'middot'. 183.}.  {'cedil'. 184.}.  {'sup1'. 185.}.
+   {'ordm'. 186.}.  {'raquo'. 187.}.  {'frac14'. 188.}.  {'frac12'. 189.}.  {'frac34'. 190.}.
+   {'iquest'. 191.}. } do: [:pair | entitiesDict add: ((pair at: 1) -> (Unicode value: (pair at: 2)))].
+
+)
+
+valueForName: name = (
+	^ entitiesDict at: name.
+)
+
+) : (
+'as yet unclassified'
+create = (
+	|e|
+      e:: self new.
+      e entitiesDict: Dictionary new.
+      e addSymbols.
+      e addCards.
+      e addSpecialAndGreek.
+      e addMathCurrency.
+      e addAccents.
+      ^e.
+)
+
+)
+
+class TestNodes = (
+"Nodes for the testing ast"
+|
+|
+)
+(
+
+class Element name: theName attributes: theAttributes childNodes: childs = (
+"Represents a Xml element."
+|
+	name ::= theName.
+      attributes ::= theAttributes.
+      childNodes ::= childs.
+|
+)
+()
+
+class Attributes = (
+"The attribute collection of a XML element."
+|
+    private attributes
+|attributes:: Dictionary new.
+)
+('as yet unclassified'
+addAttribute: name namespace: ns  value:value = (
+      |namesdictionary|
+	(attributes includesKey: ns)
+         ifTrue: [  namesdictionary::  attributes at: ns. 
+                      namesdictionary at: name put: value.]
+         ifFalse: [   namesdictionary:: (Dictionary new).
+                        attributes at: ns put: namesdictionary.
+                        namesdictionary at: name put: value.]
+)
+
+addAttribute: name  value:value = (
+      addAttribute: name namespace: nil value: value.
+)
+
+addAttributeWithQName: qname  value:value = (
+      addAttribute: (qname localPart) namespace: (qname prefix) value: value.
+)
+
+size = (
+	^attributes values inject: 0 into: [:total :current | total + (current size)]
+)
+
+withName: name = (
+	^ withName: name andNamespace:nil.
+)
+
+withName: name andNamespace: ns = (
+	^ (attributes at: ns) at: name.
+)
+
+)
+
+class TAstXmlDecl version: theVersion encoding: theEncoding standalone: isStandalone = (
+"Node for Xml Declaration"
+|
+       version = theVersion.
+       enconding = theEncoding.
+       standalone = isStandalone.
+|
+)
+()
+
+class QualifiedName prefix: thePrefix localPart: theLocalPart = (
+"Describe the class in this comment."
+|
+	prefix = thePrefix.
+	localPart = theLocalPart.
+|
+)
+('as yet unclassified'
+asString = (
+	^ (prefix isNil) ifTrue: [ localPart ] ifFalse: [prefix, ':',localPart].
+)
+
+))
+
+class CharExceptForParser = PredicateTokenParser (
+"A parser to accept any character except for the specified."
+|
+
+|
+)
+('as yet unclassified'
+for: aChar = (
+	^self accept: [:c | c ~= aChar] errorMsg: ''
+)
+
+forCharIn: chars <Array> = (
+	^self accept: [:c |  (chars includes: c) not] errorMsg: ''
+)
+
+)
+
+class XmlGrammar = ExecutableGrammar(
+"Xml 1.0 grammar with namespaces"
+|
+   openAB = char: $<.
+   closeAB = char: $>.
+   amp = char: $&.
+   semicolon = char: $; .
+   slash = char: $/.
+
+
+   topenAB = tokenFromChar: $<.
+   tcloseAB = tokenFromChar: $>.
+   tslash = tokenFromChar: $/.
+
+   comment = openAB , (char: $-),(char: $-), 
+                        ((charExceptFor: $-) | ((char: $-), (charExceptFor: $-))) plus,
+                       (char: $-),(char: $-),closeAB .
+
+   letter = (charBetween: $a and: $z) | (charBetween: $A and: $Z).
+   digit = charBetween: $0 and: $9.
+
+   colon = char: $:.
+
+   quote = (char:$') .
+   dquote = (char:$") .   
+
+   eq = tokenFromChar: $= .
+ 
+   VersionNum = (char:$1), (char: $.) , (charBetween: $0 and: $9) plus.
+
+   VersionInfo = (tokenFromSymbol: #version), eq, ((quote, VersionNum,quote) | (dquote, VersionNum, dquote )).
+
+   EncName = letter, (letter | digit) star.
+
+   EncodingDecl = (tokenFromSymbol: #enconding) , eq , ((quote, EncName ,quote) | (dquote , EncName , dquote  )).
+
+   yesNo = (tokenFromSymbol: #yes) | (tokenFromSymbol: #no).
+
+   SDDecl = (tokenFromSymbol: #standalone), eq, ((quote, yesNo ,quote) | (dquote , yesNo , dquote  )).
+
+   XMLDecl = (char: $<) , (char: $?) ,(tokenFromSymbol: #xml), VersionInfo , EncodingDecl opt, SDDecl opt,
+                     (tokenFromChar: $?), (char: $>).
+
+   dprolog = XMLDecl.
+ 
+   NameStartChar = letter | (char: $_) .
+
+   NameChar =  NameStartChar | (char: $-) | (char: $.) | digit.
+
+   Name = NameStartChar, NameChar star.
+
+   QName = (Name, colon, Name)| Name.
+
+   TQName = tokenFor: QName.
+
+   EntityRef = amp, Name ,semicolon .
+
+   CharRef = amp, (char: $#), (((char:$x), (digit | letter) plus) | (digit plus)) ,semicolon .
+
+   Reference = EntityRef | CharRef.
+
+   AttributeContent1 = (charExceptForCharIn: {$< . $". $&. }) | Reference.
+
+ 
+   AttributeValue = (dquote, AttributeContent1  star,dquote) | 
+                              (quote, AttributeContent1 star,quote).
+
+   Attribute = TQName ,eq, AttributeValue.
+
+   EmptyElemTag = topenAB ,QName, Attribute star, tslash , closeAB .
+   STag = topenAB ,QName, Attribute star, tcloseAB .
+   ETag = topenAB ,slash,QName, closeAB .
+
+   CDStart = topenAB ,(char: $!),(char:$[),(tokenFromSymbol: #CDATA),(char:$[).
+   CDEnd = (char: $]),(char: $]),(char: $>).
+
+   CDSect = CDStart, (charExceptFor: $]) star ,   CDEnd.
+
+   CharData  = tokenFor: ((charExceptForCharIn: {$&. $<}) plus).
+
+   content = CharData opt, ((element | Reference | CDSect), CharData opt) star.
+
+   ComplexElement = STag, content , ETag.
+
+   element =  EmptyElemTag | ComplexElement  .
+
+  " document = dprolog , element , (misc star)."
+ 
+|
+)
+('as yet unclassified'
+charExceptFor: aChar = (
+	^CharExceptForParser new for: aChar
+)
+
+charExceptForCharIn: chars <Array> = (
+	^CharExceptForParser new forCharIn: chars
+)
+
+)'as yet unclassified'
+entities = (
+	((entitiesCollection = nil) or: [(entitiesCollection respondsTo: #valueForName) not])
+              ifTrue: [entitiesCollection:: Entities create].
+      ^entitiesCollection
+)
+
+)

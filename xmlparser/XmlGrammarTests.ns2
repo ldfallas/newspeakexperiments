@@ -1,0 +1,179 @@
+Newsqueak2
+'LangexplrExperiments'
+
+class XmlGrammarTests usingPlatform: platform testFramework: unitTesting = NewspeakObject (
+"Test for the XmlGrammar"
+|
+      protected TestCase = unitTesting TestCase.
+      protected Platform = platform Platform.
+      protected BlocklessCombinatorialParsing = platform BlocklessCombinatorialParsing.
+      protected BaseXmlParser = platform BaseXmlParser .
+      protected  ReadStream = platform ReadStream.
+|
+)
+(
+
+class XmlParserSectionsTestCase selector: s = TestCase selector: s (
+"Test case for the different sections of an XML Document."
+|
+     
+|
+)
+(
+
+class BasicConfiguration = TestConfiguration (
+""
+|
+|
+)
+('as yet unclassified'
+configure: platform = (
+	|unitTestLib|
+
+      unitTestLib:: platform NSUnit NSUnit usingPlatform: platform.
+      ^((platform XmlGrammarTests) 
+                usingPlatform: platform 
+                testFramework: unitTestLib) XmlParserSectionsTestCase.
+)
+
+)'as yet unclassified'
+getTestingParser = (
+      |platform|
+      platform:: Platform new.
+	^(BaseXmlParser 
+                     withParserLib: (BlocklessCombinatorialParsing  usingLib: platform)
+                     usingLib: platform) XmlParserWithTestingAst new.
+)
+
+streamFromString: str = (
+	 ^ReadStream on:str from:1 to:(str size).
+)
+
+testAttributeWithEntities = (
+	|parser r|
+      parser:: getTestingParser element .
+      r:: parser parse: (streamFromString: '<myElement foo="x&amp;x"/>').
+	assert:[r attributes size = 1].
+	assert:[(r attributes withName: 'foo') = 'x&x'].
+)
+
+testElementWithOneCDataChild = (
+	|parser r|
+      parser:: getTestingParser element .
+      r:: parser parse: (streamFromString: '<myElement><![CDATA[H<<<el>>lo]]></myElement>').
+      assert:[r name asString = 'myElement'].
+	assert:[r childNodes size = 1].
+	assert:[((r childNodes at: 1) asString) = 'H<<<el>>lo'].
+
+)
+
+testElementWithOneChild = (
+	|parser r|
+      parser:: getTestingParser element .
+      r:: parser parse: (streamFromString: '<myElement><childElement1/></myElement>').
+	assert:[r childNodes size = 1].
+      assert:[r name asString = 'myElement'].
+	assert:[((r childNodes at: 1) name asString) = 'childElement1'].
+
+)
+
+testElementWithOneTextChild = (
+	|parser r|
+      parser:: getTestingParser element .
+      r:: parser parse: (streamFromString: '<myElement>Hello</myElement>').
+      assert:[r name asString = 'myElement'].
+	assert:[r childNodes size = 1].
+	assert:[((r childNodes at: 1) asString) = 'Hello'].
+
+)
+
+testElementWithOneTextChildWithEntities = (
+	|parser r|
+      parser:: getTestingParser element .
+      r:: parser parse: (streamFromString: '<myElement>He&amp;llo</myElement>').
+      assert:[r name asString = 'myElement'].
+	assert:[r childNodes size = 1].
+	assert:[((r childNodes at: 1) asString) = 'He&llo'].
+
+)
+
+testElementWithOneTextChildWithHexNumericEntities = (
+	|parser r|
+      parser:: getTestingParser element .
+      r:: parser parse: (streamFromString: '<myElement>He&#x003C;llo</myElement>').
+      assert:[r name asString = 'myElement'].
+	assert:[r childNodes size = 1].
+	assert:[((r childNodes at: 1) asString) = 'He<llo'].
+
+)
+
+testElementWithOneTextChildWithNumericEntities = (
+	|parser r|
+      parser:: getTestingParser element .
+      r:: parser parse: (streamFromString: '<myElement>He&#60;llo</myElement>').
+      assert:[r name asString = 'myElement'].
+	assert:[r childNodes size = 1].
+	assert:[((r childNodes at: 1) asString) = 'He<llo'].
+
+)
+
+testElementWithTwoElementChildren = (
+	|parser r|
+      parser:: getTestingParser element .
+      r:: parser parse: (streamFromString: '<myElement><childElement1/><childElement2/></myElement>').
+      assert:[r name asString = 'myElement'].
+	assert:[r childNodes size = 2].
+	assert:[((r childNodes at: 1) name asString) = 'childElement1'].
+	assert:[((r childNodes at: 2) name asString) = 'childElement2'].
+
+
+)
+
+testElementWithTwoElementChildrenOfDifferentType = (
+	|parser r|
+      parser:: getTestingParser element .
+      r:: parser parse: (streamFromString: '<myElement>Hola<childElement2/></myElement>').
+      assert:[r name asString = 'myElement'].
+	assert:[r childNodes size = 2].
+	assert:[((r childNodes at: 1) asString) = 'Hola'].
+	assert:[((r childNodes at: 2) name asString) = 'childElement2'].
+
+
+)
+
+testOpenCloseElement = (
+	|parser r|
+      parser:: getTestingParser element .
+      r:: parser parse: (streamFromString: '<myElement foo="xx"> </myElement>').
+	assert:[(r attributes withName: 'foo') = 'xx'].
+)
+
+testSimpleElementOneAttribute = (
+	|parser r|
+      parser:: getTestingParser element .
+      r:: parser parse: (streamFromString: '<myElement foo="xx"/>').
+	assert:[r attributes size = 1].
+)
+
+testSimpleElementTwoAttributes = (
+	|parser r|
+      parser:: getTestingParser element .
+      r:: parser parse: (streamFromString: '<myElement foo="xx"/>').
+	assert:[(r attributes withName: 'foo') = 'xx'].
+)
+
+testSimpleEmptyElement = (
+	|parser r|
+      parser:: getTestingParser element .
+      r:: parser parse: (streamFromString: '<myElement />').
+	assert:[r name asString = 'myElement'].
+)
+
+testXmlDecl = (
+      |parser r|
+      parser:: getTestingParser XMLDecl .
+      r:: parser parse: (streamFromString: '<?xml version="1.0" ?>').
+	assert:[r version = 1.0].
+)
+
+))
