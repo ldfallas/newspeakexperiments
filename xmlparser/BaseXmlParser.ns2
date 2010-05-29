@@ -4,7 +4,12 @@ Newsqueak2
 class BaseXmlParser withParserLib: parserLibrary usingLib: platform =  (
 "Base XML 1.0 grammar"
 |
-	ExecutableGrammar = parserLibrary ExecutableGrammar.
+      nsstreams = platform  NSStreams NSStreams usingPlatform: platform.
+      collections = platform NSCollections  Collections usingLib: platform withStreams: nsstreams.
+      ExecutableGrammar = parserLibrary ExecutableGrammar.
+      ParserContext = parserLibrary ParserContext. 
+      CombinatorialParser = parserLibrary CombinatorialParser. 
+      WrappingParser = parserLibrary WrappingParser.
       Number = platform Number.
       Dictionary = platform Dictionary.
       PredicateTokenParser = parserLibrary PredicateTokenParser.
@@ -13,6 +18,170 @@ class BaseXmlParser withParserLib: parserLibrary usingLib: platform =  (
 |
 )
 (
+
+class ParserWithNamespaceForStartTag = CombinatorialParser (
+"A parser that takes care of modyfing the parsing context for a start tag"
+|
+	innerparser
+	
+|
+)
+('as yet unclassified'
+forParser: p = (
+	innerparser:: p.
+)
+
+parse: input inContext: context ifError: blk = (
+	|result xmlnsAttributes elementName elementNamespace|
+	result:: innerparser parse: input inContext:context ifError:blk.
+	"First update the context with the newest prefix declarations"
+	context pushLevel.
+	xmlnsAttributes:: result attributes allAttributesWithLocalName: 'xmlns'.
+	xmlnsAttributes 
+	         do: [:aPair | context addPrefix: ((aPair at: 1) prefix)
+  		                                  for: (aPair at: 2)].
+      "Update the element"
+      elementName:: result name.
+      elementNamespace:: context namespaceFor: elementName prefix.
+      elementName namespace: elementNamespace.
+
+      "Update the attributes"
+
+	^result.
+)
+
+)
+
+class TestNodes = (
+"Nodes for the testing ast"
+|
+|
+)
+(
+
+class Element name: theName attributes: theAttributes childNodes: childs = (
+"Represents a Xml element."
+|
+	name ::= theName.
+      attributes ::= theAttributes.
+      childNodes ::= childs.
+|
+)
+()
+
+class Attributes = (
+"The attribute collection of a XML element."
+|
+    private attributes
+|attributes:: collections MutableArrayList new:  10.
+)
+('as yet unclassified'
+addAttribute: name namespace: ns  value:value = (
+    |tn|
+    tn::TestNodes new.
+    addAttributeWithQName: (tn QualifiedName prefix:ns localPart: name) value: value.
+)
+
+addAttribute: name  value:value = (
+      addAttribute: name namespace: nil value: value.
+)
+
+addAttributeWithQName: qname  value:value = (
+      attributes add: {qname. value.}
+)
+
+allAttributesWithLocalName: name= (
+      |result|
+      result:: collections MutableArrayList new:  5.
+	attributes 
+	       do: [:aPair | ((aPair at: 1)  localPart = name) ifTrue: [result add: aPair]].
+	^result
+)
+
+size = (
+	^attributes size
+)
+
+withName: name = (
+	^ withName: name andNamespace:nil.
+)
+
+withName: name andNamespace: ns = (
+	|index ename|
+	index:: attributes 
+	                  findFirst: [:e | ename:: e at: 1.
+		                                 (ename localPart = name) and: [(ename prefix = ns)]].
+	^(index > 0)
+	     ifTrue: [(attributes at: index) at: 2]
+           ifFalse: [nil]
+)
+
+)
+
+class TAstXmlDecl version: theVersion encoding: theEncoding standalone: isStandalone = (
+"Node for Xml Declaration"
+|
+       version = theVersion.
+       enconding = theEncoding.
+       standalone = isStandalone.
+|
+)
+()
+
+class QualifiedName prefix: thePrefix localPart: theLocalPart = (
+"Describe the class in this comment."
+|
+	prefix = thePrefix.
+	localPart = theLocalPart.
+	public namespace = nil.
+|
+)
+('as yet unclassified'
+asString = (
+	^ (prefix isNil) ifTrue: [ localPart ] ifFalse: [prefix, ':',localPart].
+)
+
+))
+
+class CharExceptForParser = PredicateTokenParser (
+"A parser to accept any character except for the specified."
+|
+
+|
+)
+('as yet unclassified'
+for: aChar = (
+	^self accept: [:c | c ~= aChar] errorMsg: ''
+)
+
+forCharIn: chars <Array> = (
+	^self accept: [:c |  (chars includes: c) not] errorMsg: ''
+)
+
+)
+
+class XmlParserWithNodesAndNamespaces = XmlParserWithTestingAst (
+"An XML Parser that creates a node tree and that solves the namespaces."
+|
+        
+|
+)
+('as yet unclassified'
+EmptyElemTag = (
+      |newWrappingParser|
+      newWrappingParser:: ParserWithNamespaceForStartEndTag new.
+      newWrappingParser forParser: (super EmptyElemTag).
+      ^newWrappingParser
+)
+
+STag = (
+      |tn attCollection newWrappingParser|
+      newWrappingParser:: ParserWithNamespaceForStartTag new.
+      newWrappingParser forParser: (super STag).
+      ^newWrappingParser
+)
+
+)
 
 class XmlParserWithTestingAst = XmlGrammar (
 "Basic XmlParser with ast for testing"
@@ -99,12 +268,20 @@ Name = (
 	^ super Name  wrapper: [:startChar :rest | { { (startChar asString), (String withAll: rest) } } ].
 )
 
+NameWithPrefix = (
+	|tn|
+      tn:: TestNodes new.
+	^ super NameWithPrefix 
+	                  wrapper: [ :prefix :c  :name | 
+		                                   {{(prefix at: 1). (name at: 1).}} ].
+)
+
 QName = (
       |tn|
       tn:: TestNodes new.
-	^ super QName  wrapper: [ :data | ((data size) = 3) 
+	^ super QName  wrapper: [ :data | ((data size) = 2) 
                                                            ifTrue:[tn QualifiedName prefix: ((data at:1) at: 1) 
-                                                                           localPart:((data at: 1) at:3)]
+                                                                           localPart:((data at: 2) at:1)]
                                                            ifFalse:[tn QualifiedName prefix: nil localPart: (data at: 1)]]
 )
 
@@ -113,8 +290,10 @@ STag = (
       tn:: TestNodes new.
       attCollection:: tn Attributes new.
 	^super STag 
-                     wrapper: [:oab :name :atts :cab | 
+                     wrapper: [:oab :name :atts :cab | 	                                    
+	                                    "Add attributes"
                                           atts do: [:att | attCollection addAttributeWithQName: ((att at: 1) token) value: (att at:2)].
+                                          "Create elements"
                                           tn Element name: name attributes: attCollection childNodes:{} ].
 )
 
@@ -271,102 +450,55 @@ create = (
 
 )
 
-class TestNodes = (
-"Nodes for the testing ast"
+class ParserWithNamespaceForStartEndTag =ParserWithNamespaceForStartTag(
+"Parser that takes care of modifying the parsing context for namespace declarations for self closing tags."
 |
-|
-)
-(
 
-class Element name: theName attributes: theAttributes childNodes: childs = (
-"Represents a Xml element."
-|
-	name ::= theName.
-      attributes ::= theAttributes.
-      childNodes ::= childs.
 |
 )
 ()
 
-class Attributes = (
-"The attribute collection of a XML element."
+class XmlNamespaceParserContext = ParserContext (
+"An Xml parser context that keeps track of namespaces."
 |
-    private attributes
-|attributes:: Dictionary new.
+	protected prefixes = collections MutableArrayList new:  10.
+   
+|
 )
 ('as yet unclassified'
-addAttribute: name namespace: ns  value:value = (
-      |namesdictionary|
-	(attributes includesKey: ns)
-         ifTrue: [  namesdictionary::  attributes at: ns. 
-                      namesdictionary at: name put: value.]
-         ifFalse: [   namesdictionary:: (Dictionary new).
-                        attributes at: ns put: namesdictionary.
-                        namesdictionary at: name put: value.]
+addPrefix: prefix for: namespace = (
+	|lastLevel|
+	lastLevel:: prefixes at: (prefixes size).
+	lastLevel at: prefix put: namespace.
+	
 )
 
-addAttribute: name  value:value = (
-      addAttribute: name namespace: nil value: value.
+namespaceFor: prefix = (
+	|levelIndex|
+
+      levelIndex:: prefixes findLast: [:lvl | (lvl includesKey: prefix) ].
+      ^(levelIndex > 0)
+                 ifTrue: [(prefixes at: levelIndex) at: prefix]
+                 ifFalse: [nil].
 )
 
-addAttributeWithQName: qname  value:value = (
-      addAttribute: (qname localPart) namespace: (qname prefix) value: value.
+popLevel = (
+	prefixes pop.
 )
 
-size = (
-	^attributes values inject: 0 into: [:total :current | total + (current size)]
-)
-
-withName: name = (
-	^ withName: name andNamespace:nil.
-)
-
-withName: name andNamespace: ns = (
-	^ (attributes at: ns) at: name.
+pushLevel = (
+	prefixes push: (collections MutableHashedMap new).
 )
 
 )
 
-class TAstXmlDecl version: theVersion encoding: theEncoding standalone: isStandalone = (
-"Node for Xml Declaration"
+class ParserWithNamespaceForEndTag = CombinatorialParser (
+"A parser that takes care of modyfing the parsing context for a end tag"
 |
-       version = theVersion.
-       enconding = theEncoding.
-       standalone = isStandalone.
+	
 |
 )
 ()
-
-class QualifiedName prefix: thePrefix localPart: theLocalPart = (
-"Describe the class in this comment."
-|
-	prefix = thePrefix.
-	localPart = theLocalPart.
-|
-)
-('as yet unclassified'
-asString = (
-	^ (prefix isNil) ifTrue: [ localPart ] ifFalse: [prefix, ':',localPart].
-)
-
-))
-
-class CharExceptForParser = PredicateTokenParser (
-"A parser to accept any character except for the specified."
-|
-
-|
-)
-('as yet unclassified'
-for: aChar = (
-	^self accept: [:c | c ~= aChar] errorMsg: ''
-)
-
-forCharIn: chars <Array> = (
-	^self accept: [:c |  (chars includes: c) not] errorMsg: ''
-)
-
-)
 
 class XmlGrammar = ExecutableGrammar(
 "Xml 1.0 grammar with namespaces"
@@ -419,7 +551,9 @@ class XmlGrammar = ExecutableGrammar(
 
    Name = NameStartChar, NameChar star.
 
-   QName = (Name, colon, Name)| Name.
+   NameWithPrefix = Name, colon, Name.
+
+   QName = NameWithPrefix | Name.
 
    TQName = tokenFor: QName.
 

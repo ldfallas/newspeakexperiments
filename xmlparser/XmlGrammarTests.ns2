@@ -5,7 +5,7 @@ class XmlGrammarTests usingPlatform: platform testFramework: unitTesting = Newsp
 "Test for the XmlGrammar"
 |
       protected TestCase = unitTesting TestCase.
-      protected Platform = platform Platform.
+      protected Platform = platform .
       protected BlocklessCombinatorialParsing = platform BlocklessCombinatorialParsing.
       protected BaseXmlParser = platform BaseXmlParser .
       protected  ReadStream = platform ReadStream.
@@ -30,19 +30,35 @@ class BasicConfiguration = TestConfiguration (
 configure: platform = (
 	|unitTestLib|
 
-      unitTestLib:: platform NSUnit NSUnit usingPlatform: platform.
+      unitTestLib:: platform NSUnit NSUnit usingPlatform: (platform NsPlatform soleInstance).
       ^((platform XmlGrammarTests) 
-                usingPlatform: platform 
+                usingPlatform:  (platform NsPlatform soleInstance) 
                 testFramework: unitTestLib) XmlParserSectionsTestCase.
 )
 
 )'as yet unclassified'
+getTestingNsParser = (
+      |platform|
+      platform:: Platform new.
+	^(BaseXmlParser 
+                     withParserLib: (BlocklessCombinatorialParsing  usingLib: platform)
+                     usingLib: platform) XmlParserWithNodesAndNamespaces new.
+)
+
 getTestingParser = (
       |platform|
       platform:: Platform new.
 	^(BaseXmlParser 
                      withParserLib: (BlocklessCombinatorialParsing  usingLib: platform)
                      usingLib: platform) XmlParserWithTestingAst new.
+)
+
+getXmlNsParserContext = (
+      |platform|
+      platform:: Platform new.
+	^(BaseXmlParser 
+                     withParserLib: (BlocklessCombinatorialParsing  usingLib: platform)
+                     usingLib: platform) XmlNamespaceParserContext new.
 )
 
 streamFromString: str = (
@@ -75,6 +91,22 @@ testElementWithOneChild = (
       assert:[r name asString = 'myElement'].
 	assert:[((r childNodes at: 1) name asString) = 'childElement1'].
 
+)
+
+testElementWithOneChildWithNamespaces = (
+	|parser r ctxt|
+      parser:: getTestingNsParser element .
+      ctxt:: getXmlNsParserContext.
+      r:: parser parse: (streamFromString: '<myElement xmlns="http://foo"><childElement1/></myElement>') 
+                     inContext: ctxt
+                     ifError: [:msg1   :pos1  |  ctxt recordFailure: {msg1.pos1}.].
+                     
+	assert:[r childNodes size = 1].
+      assert:[r name asString = 'myElement'].
+      assert:[r name namespace = 'http://foo'].
+	assert:[((r childNodes at: 1) name asString) = 'childElement1'].
+      assert:[((r childNodes at: 1) name namespace) = 'http://foo'].
+ 
 )
 
 testElementWithOneTextChild = (
