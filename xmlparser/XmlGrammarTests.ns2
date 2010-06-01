@@ -61,6 +61,12 @@ getXmlNsParserContext = (
                      usingLib: platform) XmlNamespaceParserContext new.
 )
 
+parserErrorClass = (
+      |platform|
+      platform:: Platform new.
+	^((BlocklessCombinatorialParsing  usingLib: platform) ParserError)
+)
+
 streamFromString: str = (
 	 ^ReadStream on:str from:1 to:(str size).
 )
@@ -71,6 +77,38 @@ testAttributeWithEntities = (
       r:: parser parse: (streamFromString: '<myElement foo="x&amp;x"/>').
 	assert:[r attributes size = 1].
 	assert:[(r attributes withName: 'foo') = 'x&x'].
+)
+
+testElementDifferentLevelNamespaces = (
+	|parser r |
+      parser:: xmlNsParserWrapper: (getTestingNsParser element) .
+      r:: parser parse: (streamFromString: '<myElement xmlns="http://foo">
+                                                                     <childElement xmlns="http://goo"/>
+                                                                     <childElement >
+                                                                         <xchildElement xmlns="http://loo"/>
+                                                                     </childElement >
+                                                                     <childElement >
+                                                                         <xchildElement />
+                                                                     </childElement >
+                                                                   </myElement>') .
+                     
+      assert:[r name asString = 'myElement'].
+      assert:[r name namespace = 'http://foo'].
+	assert:[((r childNodes at: 1) name asString) = 'childElement'].
+      assert:[((r childNodes at: 1) name namespace) = 'http://goo'].
+
+	assert:[((r childNodes at: 2) name asString) = 'childElement'].
+      assert:[((r childNodes at: 2) name namespace) = 'http://foo'].
+	assert:[(((r childNodes at: 2) childNodes at: 1) name asString) = 'xchildElement'].
+      assert:[(((r childNodes at: 2) childNodes at: 1) name namespace) = 'http://loo'].
+
+	assert:[((r childNodes at: 3) name asString) = 'childElement'].
+      assert:[((r childNodes at: 3) name namespace) = 'http://foo'].
+	assert:[(((r childNodes at: 3) childNodes at: 1) name asString) = 'xchildElement'].
+      assert:[(((r childNodes at: 3) childNodes at: 1) attributes size) = 0].
+      assert:[(((r childNodes at: 3) childNodes at: 1) name namespace) = 'http://foo'].
+
+ 
 )
 
 testElementWithOneCDataChild = (
@@ -93,13 +131,24 @@ testElementWithOneChild = (
 
 )
 
+testElementWithOneChildWithDifferentNamespaces = (
+	|parser r ctxt|
+      parser:: xmlNsParserWrapper: (getTestingNsParser element) .
+
+      r:: parser parse: (streamFromString: '<myElement xmlns="http://foo"><childElement1 xmlns="http://goo"/></myElement>') .
+                     
+	assert:[r childNodes size = 1].
+      assert:[r name asString = 'myElement'].
+      assert:[r name namespace = 'http://foo'].
+	assert:[((r childNodes at: 1) name asString) = 'childElement1'].
+      assert:[((r childNodes at: 1) name namespace) = 'http://goo'].
+ 
+)
+
 testElementWithOneChildWithNamespaces = (
 	|parser r ctxt|
-      parser:: getTestingNsParser element .
-      ctxt:: getXmlNsParserContext.
-      r:: parser parse: (streamFromString: '<myElement xmlns="http://foo"><childElement1/></myElement>') 
-                     inContext: ctxt
-                     ifError: [:msg1   :pos1  |  ctxt recordFailure: {msg1.pos1}.].
+      parser:: xmlNsParserWrapper: (getTestingNsParser element) .
+      r:: parser parse: (streamFromString: '<myElement xmlns="http://foo"><childElement1/></myElement>') .
                      
 	assert:[r childNodes size = 1].
       assert:[r name asString = 'myElement'].
@@ -173,6 +222,16 @@ testElementWithTwoElementChildrenOfDifferentType = (
 
 )
 
+testElementWithWhitespaceInEndTag = (
+	|parser r|
+      parser:: getTestingParser element .
+      r:: parser parse: (streamFromString: '<myElement></myElement  >').
+	assert:[r childNodes size = 0].
+      assert:[r name asString = 'myElement'].
+
+
+)
+
 testOpenCloseElement = (
 	|parser r|
       parser:: getTestingParser element .
@@ -206,6 +265,14 @@ testXmlDecl = (
       parser:: getTestingParser XMLDecl .
       r:: parser parse: (streamFromString: '<?xml version="1.0" ?>').
 	assert:[r version = 1.0].
+)
+
+xmlNsParserWrapper: innerParser = (
+	|platform|
+      platform:: Platform new.
+	^(BaseXmlParser 
+                     withParserLib: (BlocklessCombinatorialParsing  usingLib: platform)
+                     usingLib: platform) ParserWithXmlContext forParser: innerParser .
 )
 
 ))

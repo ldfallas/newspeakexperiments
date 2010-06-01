@@ -167,6 +167,13 @@ class XmlParserWithNodesAndNamespaces = XmlParserWithTestingAst (
 |
 )
 ('as yet unclassified'
+ETag  = (
+	|newWrappingParser|
+      newWrappingParser:: ParserWithNamespaceForEndTag new.
+      newWrappingParser forParser: (super ETag).
+      ^newWrappingParser
+)
+
 EmptyElemTag = (
       |newWrappingParser|
       newWrappingParser:: ParserWithNamespaceForStartEndTag new.
@@ -237,6 +244,7 @@ ComplexElement = (
       |tn attCollection|
       tn:: TestNodes new.
       attCollection:: tn Attributes new.
+
 	^ super ComplexElement 
                      wrapper: [:s :childNodes :e | 
                                         (e asString = s name asString) ifFalse: [error: 'Open tag different from closing tag'].
@@ -249,12 +257,14 @@ ETag = (
 )
 
 EmptyElemTag = (
-      |tn attCollection|
-      tn:: TestNodes new.
-      attCollection:: tn Attributes new.
+
 	^super EmptyElemTag 
                      wrapper: [:oab :name :atts :s :cab | 
-                                          atts do: [:att | attCollection addAttributeWithQName: ((att at: 1) token) value: (att at:2)].
+                                       |tn attCollection|
+                                       tn:: TestNodes new.
+                                       attCollection:: tn Attributes new.
+
+                                       atts do: [:att | attCollection addAttributeWithQName: ((att at: 1) token) value: (att at:2)].
                                           tn Element name: name attributes: attCollection childNodes:{} ].
 )
 
@@ -286,11 +296,13 @@ QName = (
 )
 
 STag = (
-      |tn attCollection|
-      tn:: TestNodes new.
-      attCollection:: tn Attributes new.
+
+
 	^super STag 
                      wrapper: [:oab :name :atts :cab | 	                                    
+                                          |tn attCollection|
+                                          tn:: TestNodes new.
+                                          attCollection:: tn Attributes new.
 	                                    "Add attributes"
                                           atts do: [:att | attCollection addAttributeWithQName: ((att at: 1) token) value: (att at:2)].
                                           "Create elements"
@@ -456,13 +468,49 @@ class ParserWithNamespaceForStartEndTag =ParserWithNamespaceForStartTag(
 
 |
 )
-()
+('as yet unclassified'
+parse: input inContext: context ifError: blk = (
+    |result|
+    result:: super parse: input inContext: context ifError: blk.
+    context popLevel.
+    ^result
+)
 
-class XmlNamespaceParserContext = ParserContext (
+)
+
+class ParserWithXmlContext = CombinatorialParser (
+"Parser that adds an Xml parsing context to the process."
+|
+    public innerParser
+|
+)
+('as yet unclassified'
+parse: input inContext: ctxt ifError: blk = (
+	|newContext|
+	newContext:: (XmlNamespaceParserContext new) forContext: ctxt.
+	^innerParser parse: input inContext: newContext ifError: blk.
+)
+
+theInnerParser: p = (
+	innerParser:: p.
+)
+
+) : (
+'as yet unclassified'
+forParser: ctxt = (
+	|r|
+	r:: ParserWithXmlContext new.
+	r theInnerParser: ctxt. 
+	^ r.
+)
+
+)
+
+class XmlNamespaceParserContext =  (
 "An Xml parser context that keeps track of namespaces."
 |
 	protected prefixes = collections MutableArrayList new:  10.
-   
+      protected innerContext = nil.
 |
 )
 ('as yet unclassified'
@@ -471,6 +519,14 @@ addPrefix: prefix for: namespace = (
 	lastLevel:: prefixes at: (prefixes size).
 	lastLevel at: prefix put: namespace.
 	
+)
+
+doesNotUnderstand: msg = (
+	msg sendTo: innerContext.
+)
+
+forContext: ctxt = (
+	innerContext:: ctxt.
 )
 
 namespaceFor: prefix = (
@@ -495,10 +551,23 @@ pushLevel = (
 class ParserWithNamespaceForEndTag = CombinatorialParser (
 "A parser that takes care of modyfing the parsing context for a end tag"
 |
+	protected innerParser = nil.
 	
 |
 )
-()
+('as yet unclassified'
+forParser: parser = (
+	innerParser:: parser.
+)
+
+parse: input inContext: context ifError: blk = (
+    |result|
+    result:: innerParser parse: input inContext: context ifError: blk.
+    context popLevel.
+    ^result
+)
+
+)
 
 class XmlGrammar = ExecutableGrammar(
 "Xml 1.0 grammar with namespaces"
@@ -573,7 +642,7 @@ class XmlGrammar = ExecutableGrammar(
 
    EmptyElemTag = topenAB ,QName, Attribute star, tslash , closeAB .
    STag = topenAB ,QName, Attribute star, tcloseAB .
-   ETag = topenAB ,slash,QName, closeAB .
+   ETag = topenAB ,slash,QName, tcloseAB .
 
    CDStart = topenAB ,(char: $!),(char:$[),(tokenFromSymbol: #CDATA),(char:$[).
    CDEnd = (char: $]),(char: $]),(char: $>).
