@@ -32,7 +32,7 @@ forParser: p = (
 )
 
 parse: input inContext: context ifError: blk = (
-	|result xmlnsAttributes elementName elementNamespace|
+	|result xmlnsAttributes elementName elementNamespace attName|
 	result:: innerparser parse: input inContext:context ifError:blk.
 	"First update the context with the newest prefix declarations"
 	context pushLevel.
@@ -46,6 +46,12 @@ parse: input inContext: context ifError: blk = (
       elementName namespace: elementNamespace.
 
       "Update the attributes"
+      result attributes 
+          do: [:aPair | 
+                   attName:: aPair at: 1.
+                   attName namespace: 
+                           (context namespaceFor: attName prefix)
+	              ].
 
 	^result.
 )
@@ -98,6 +104,10 @@ allAttributesWithLocalName: name= (
 	^result
 )
 
+do: blk = (
+	attributes do: blk.
+)
+
 size = (
 	^attributes size
 )
@@ -107,6 +117,16 @@ withName: name = (
 )
 
 withName: name andNamespace: ns = (
+	|index ename|
+	index:: attributes 
+	                  findFirst: [:e | ename:: e at: 1.
+		                                 (ename localPart = name) and: [(ename namespace = ns)]].
+	^(index > 0)
+	     ifTrue: [(attributes at: index) at: 2]
+           ifFalse: [nil]
+)
+
+withName: name andPrefix: ns = (
 	|index ename|
 	index:: attributes 
 	                  findFirst: [:e | ename:: e at: 1.

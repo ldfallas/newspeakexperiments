@@ -111,6 +111,54 @@ testElementDifferentLevelNamespaces = (
  
 )
 
+testElementDifferentLevelPrefixNamespaces = (
+	|parser r |
+      parser:: xmlNsParserWrapper: (getTestingNsParser element) .
+      r:: parser parse: (streamFromString: '<pro:myElement pro:xmlns="http://foo">
+                                                                     <childElement xmlns="http://goo"/>
+                                                                     <pro:childElement >
+                                                                         <xchildElement xmlns="http://loo"/>
+                                                                     </pro:childElement >
+                                                                     <pro:childElement >
+                                                                         <xchildElement />
+                                                                     </pro:childElement >
+                                                                   </pro:myElement>') .
+                     
+      assert:[r name asString = 'pro:myElement'].
+      assert:[r name namespace = 'http://foo'].
+	assert:[((r childNodes at: 1) name asString) = 'childElement'].
+      assert:[((r childNodes at: 1) name namespace) = 'http://goo'].
+
+	assert:[((r childNodes at: 2) name asString) = 'pro:childElement'].
+      assert:[((r childNodes at: 2) name namespace) = 'http://foo'].
+	assert:[(((r childNodes at: 2) childNodes at: 1) name asString) = 'xchildElement'].
+      assert:[(((r childNodes at: 2) childNodes at: 1) name namespace) = 'http://loo'].
+
+	assert:[((r childNodes at: 3) name asString) = 'pro:childElement'].
+      assert:[((r childNodes at: 3) name namespace) = 'http://foo'].
+	assert:[(((r childNodes at: 3) childNodes at: 1) name asString) = 'xchildElement'].
+      assert:[(((r childNodes at: 3) childNodes at: 1) attributes size) = 0].
+      assert:[(((r childNodes at: 3) childNodes at: 1) name namespace) = nil].
+
+ 
+)
+
+testElementWithAttributesWithNamespaces = (
+	|parser r ctxt|
+      parser:: xmlNsParserWrapper: (getTestingNsParser element) .
+
+      r:: parser parse: (streamFromString: '<myElement h:xmlns="http://foo"><childElement1 h:foo="attvalue" foo="altval" /></myElement>') .
+                     
+	assert:[r childNodes size = 1].
+      assert:[r name asString = 'myElement'].
+      assert:[r name namespace = nil].
+	assert:[((r childNodes at: 1) name asString) = 'childElement1'].
+      assert:[((r childNodes at: 1) name namespace) = nil].
+      assert:[((r childNodes at: 1) attributes withName: 'foo' andNamespace: 'http://foo') = 'attvalue'].
+      assert:[((r childNodes at: 1) attributes withName: 'foo' andNamespace: nil) = 'altval'].
+ 
+)
+
 testElementWithOneCDataChild = (
 	|parser r|
       parser:: getTestingParser element .
