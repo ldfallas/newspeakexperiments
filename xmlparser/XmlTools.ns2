@@ -1,7 +1,7 @@
 Newsqueak2
 'LangexplrExperiments'
 
-class BaseXmlParser withParserLib: parserLibrary usingLib: platform =  (
+class XmlTools withParserLib: parserLibrary usingLib: platform =  (
 "Base XML 1.0 grammar"
 |
       nsstreams = platform  NSStreams NSStreams usingPlatform: platform.
@@ -58,7 +58,7 @@ parse: input inContext: context ifError: blk = (
 
 )
 
-class TestNodes = (
+class XmlNodes = (
 "Nodes for the testing ast"
 |
 |
@@ -84,7 +84,7 @@ class Attributes = (
 ('as yet unclassified'
 addAttribute: name namespace: ns  value:value = (
     |tn|
-    tn::TestNodes new.
+    tn::XmlNodes new.
     addAttributeWithQName: (tn QualifiedName prefix:ns localPart: name) value: value.
 )
 
@@ -180,7 +180,7 @@ forCharIn: chars <Array> = (
 
 )
 
-class XmlParserWithNodesAndNamespaces = XmlParserWithTestingAst (
+class XmlParserWithNodesAndNamespaces = XmlParserWithXmlNodes (
 "An XML Parser that creates a node tree and that solves the namespaces."
 |
         
@@ -210,7 +210,7 @@ STag = (
 
 )
 
-class XmlParserWithTestingAst = XmlGrammar (
+class XmlParserWithXmlNodes = XmlGrammar (
 "Basic XmlParser with ast for testing"
 |
 	
@@ -262,7 +262,7 @@ CharRef = (
 
 ComplexElement = (
       |tn attCollection|
-      tn:: TestNodes new.
+      tn:: XmlNodes new.
       attCollection:: tn Attributes new.
 
 	^ super ComplexElement 
@@ -281,7 +281,7 @@ EmptyElemTag = (
 	^super EmptyElemTag 
                      wrapper: [:oab :name :atts :s :cab | 
                                        |tn attCollection|
-                                       tn:: TestNodes new.
+                                       tn:: XmlNodes new.
                                        attCollection:: tn Attributes new.
 
                                        atts do: [:att | attCollection addAttributeWithQName: ((att at: 1) token) value: (att at:2)].
@@ -300,7 +300,7 @@ Name = (
 
 NameWithPrefix = (
 	|tn|
-      tn:: TestNodes new.
+      tn:: XmlNodes new.
 	^ super NameWithPrefix 
 	                  wrapper: [ :prefix :c  :name | 
 		                                   {{(prefix at: 1). (name at: 1).}} ].
@@ -308,7 +308,7 @@ NameWithPrefix = (
 
 QName = (
       |tn|
-      tn:: TestNodes new.
+      tn:: XmlNodes new.
 	^ super QName  wrapper: [ :data | ((data size) = 2) 
                                                            ifTrue:[tn QualifiedName prefix: ((data at:1) at: 1) 
                                                                            localPart:((data at: 2) at:1)]
@@ -321,7 +321,7 @@ STag = (
 	^super STag 
                      wrapper: [:oab :name :atts :cab | 	                                    
                                           |tn attCollection|
-                                          tn:: TestNodes new.
+                                          tn:: XmlNodes new.
                                           attCollection:: tn Attributes new.
 	                                    "Add attributes"
                                           atts do: [:att | attCollection addAttributeWithQName: ((att at: 1) token) value: (att at:2)].
@@ -343,7 +343,7 @@ VersionNum = (
 
 XMLDecl = (
       |tn|
-      tn:: TestNodes new.
+      tn:: XmlNodes new.
 	^super XMLDecl 
                      wrapper: [:c1 :c2 :x :versionInfo :enc :sd :c3 :c4 | 
 

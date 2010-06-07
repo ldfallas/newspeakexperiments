@@ -7,7 +7,7 @@ class XmlGrammarTests usingPlatform: platform testFramework: unitTesting = Newsp
       protected TestCase = unitTesting TestCase.
       protected Platform = platform .
       protected BlocklessCombinatorialParsing = platform BlocklessCombinatorialParsing.
-      protected BaseXmlParser = platform BaseXmlParser .
+      protected XmlTools = platform XmlTools .
       protected  ReadStream = platform ReadStream.
 |
 )
@@ -40,7 +40,7 @@ configure: platform = (
 getTestingNsParser = (
       |platform|
       platform:: Platform new.
-	^(BaseXmlParser 
+	^(XmlTools 
                      withParserLib: (BlocklessCombinatorialParsing  usingLib: platform)
                      usingLib: platform) XmlParserWithNodesAndNamespaces new.
 )
@@ -48,15 +48,15 @@ getTestingNsParser = (
 getTestingParser = (
       |platform|
       platform:: Platform new.
-	^(BaseXmlParser 
+	^(XmlTools 
                      withParserLib: (BlocklessCombinatorialParsing  usingLib: platform)
-                     usingLib: platform) XmlParserWithTestingAst new.
+                     usingLib: platform) XmlParserWithXmlNodes new.
 )
 
 getXmlNsParserContext = (
       |platform|
       platform:: Platform new.
-	^(BaseXmlParser 
+	^(XmlTools 
                      withParserLib: (BlocklessCombinatorialParsing  usingLib: platform)
                      usingLib: platform) XmlNamespaceParserContext new.
 )
@@ -318,7 +318,7 @@ testXmlDecl = (
 xmlNsParserWrapper: innerParser = (
 	|platform|
       platform:: Platform new.
-	^(BaseXmlParser 
+	^(XmlTools 
                      withParserLib: (BlocklessCombinatorialParsing  usingLib: platform)
                      usingLib: platform) ParserWithXmlContext forParser: innerParser .
 )
