@@ -41,16 +41,16 @@ getTestingNsParser = (
       |platform|
       platform:: Platform new.
 	^(XmlTools 
-                     withParserLib: (BlocklessCombinatorialParsing  usingLib: platform)
-                     usingLib: platform) XmlParserWithNodesAndNamespaces new.
+                     withParserLibClass: BlocklessCombinatorialParsing  
+                     usingLib: platform) parserWithNamespaceSupport.
 )
 
 getTestingParser = (
       |platform|
       platform:: Platform new.
 	^(XmlTools 
-                     withParserLib: (BlocklessCombinatorialParsing  usingLib: platform)
-                     usingLib: platform) XmlParserWithXmlNodes new.
+                     withParserLibClass: BlocklessCombinatorialParsing  
+                     usingLib: platform) basicParser.
 )
 
 getXmlNsParserContext = (
@@ -316,11 +316,7 @@ testXmlDecl = (
 )
 
 xmlNsParserWrapper: innerParser = (
-	|platform|
-      platform:: Platform new.
-	^(XmlTools 
-                     withParserLib: (BlocklessCombinatorialParsing  usingLib: platform)
-                     usingLib: platform) ParserWithXmlContext forParser: innerParser .
+	^innerParser
 )
 
 ))
