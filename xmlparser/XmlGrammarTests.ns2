@@ -9,9 +9,202 @@ class XmlGrammarTests usingPlatform: platform testFramework: unitTesting = Newsp
       protected BlocklessCombinatorialParsing = platform BlocklessCombinatorialParsing.
       protected XmlTools = platform XmlTools .
       protected  ReadStream = platform ReadStream.
+      private CharacterReadWriteStream = platform streams CharacterReadWriteStream. 
 |
 )
 (
+
+class XmlGenerationTestCase selector: s = TestCase selector: s (
+"Tests for XML generation utilities"
+|
+|
+)
+(
+
+class BasicConfiguration = TestConfiguration(
+"Configuration for XML Generation testcase"
+|
+|
+)
+('as yet unclassified'
+configure: platform = (
+	|unitTestLib|
+
+      unitTestLib:: platform NSUnit NSUnit usingPlatform: (platform NsPlatform soleInstance).
+      ^((platform XmlGrammarTests) 
+                usingPlatform:  (platform NsPlatform soleInstance) 
+                testFramework: unitTestLib) XmlGenerationTestCase.
+)
+
+)'as yet unclassified'
+getTestingWriter: output = (
+      |platform|
+      platform:: Platform new.
+	^(XmlTools 
+                     withParserLibClass: BlocklessCombinatorialParsing  
+                     usingLib: platform) basicWriter: output.
+)
+
+testAttributeValueEscaping = (
+      |writer output|
+      output:: CharacterReadWriteStream on:  (String new: 5).
+      writer:: getTestingWriter: output .
+      writer writeStartElement: 'foo'.
+      writer writeAttribute: 'fId1' value: 'o"n"e'.
+
+      writer writeEndElement.
+
+	assert: [output contentsWritten = '<foo fId1="o&quot;n&quot;e" />'].
+)
+
+testBasicNestedElementGeneration = (
+      |writer output|
+      output:: CharacterReadWriteStream on:  (String new: 5).
+      writer:: getTestingWriter: output .
+      writer writeStartElement: 'foo'.
+          writer writeStartElement: 'foo1'.
+          writer writeEndElement.
+          writer writeStartElement: 'foo2'.
+          writer writeEndElement.
+          writer writeStartElement: 'foo3'.
+              writer writeStartElement: 'foo4'.
+              writer writeEndElement.
+          writer writeEndElement.
+
+      writer writeEndElement.
+
+	assert: [output contentsWritten = '<foo><foo1 /><foo2 /><foo3><foo4 /></foo3></foo>'].
+)
+
+testBasicNestedElementGenerationWithNamespace = (
+      |writer output ns p|
+      output:: CharacterReadWriteStream on:  (String new: 5).
+      writer:: getTestingWriter: output .
+      ns:: 'http://goo'.
+      p:: 'g'.
+      writer writeStartElement: 'foo' namespace: ns prefix: 'g'.
+          writer writeStartElement: 'foo1' namespace: ns.
+          writer writeEndElement.
+          writer writeStartElement: 'foo2' namespace: ns.
+          writer writeEndElement.
+          writer writeStartElement: 'foo3' namespace: 'http://zoo'.
+              writer writeStartElement: 'foo4' namespace: ns.
+              writer writeEndElement.
+          writer writeEndElement.
+
+      writer writeEndElement.
+
+	assert: [output contentsWritten = '<g:foo g:xmlns="http://goo"><g:foo1 /><g:foo2 /><foo3 xmlns="http://zoo"><g:foo4 /></foo3></g:foo>'].
+)
+
+testBasicNestedElementGenerationWithNamespaceAndPrefix = (
+      |writer output ns|
+      output:: CharacterReadWriteStream on:  (String new: 5).
+      writer:: getTestingWriter: output .
+      ns:: 'http://goo'.
+      writer writeStartElement: 'foo' namespace: ns.
+          writer writeStartElement: 'foo1' namespace: ns.
+          writer writeEndElement.
+          writer writeStartElement: 'foo2' namespace: ns.
+          writer writeEndElement.
+          writer writeStartElement: 'foo3' namespace: 'http://zoo'.
+              writer writeStartElement: 'foo4' namespace: ns.
+              writer writeEndElement.
+          writer writeEndElement.
+
+      writer writeEndElement.
+
+	assert: [output contentsWritten = '<foo xmlns="http://goo"><foo1 /><foo2 /><foo3 xmlns="http://zoo"><foo4 xmlns="http://goo" /></foo3></foo>'].
+)
+
+testEscapedTextElementGeneration = (
+      |writer output|
+      output:: CharacterReadWriteStream on:  (String new: 5).
+      writer:: getTestingWriter: output .
+      writer writeStartElement: 'foo'.
+      writer writeText: '<e at="&amp;" />'.
+      writer writeEndElement.
+
+	assert: [output contentsWritten = '<foo>&lt;e at=&quot;&amp;amp;&quot; /&gt;</foo>'].
+)
+
+testSingleAttributesGeneration = (
+      |writer output|
+      output:: CharacterReadWriteStream on:  (String new: 5).
+      writer:: getTestingWriter: output .
+      writer writeStartElement: 'foo'.
+      writer writeAttribute: 'fId1' value: 'one'.
+      writer writeAttribute: 'fId2' value: 'two'.
+
+
+      writer writeEndElement.
+
+	assert: [output contentsWritten = '<foo fId1="one" fId2="two" />'].
+)
+
+testSingleAttributesGenerationWithNamespace = (
+      |writer output|
+      output:: CharacterReadWriteStream on:  (String new: 5).
+      writer:: getTestingWriter: output .
+      writer writeStartElement: 'foo'.
+      writer writeAttribute: 'fId1' value: 'one' namespace: 'http://loo' prefix: 'k'.
+      writer writeAttribute: 'fId2' value: 'two' namespace: 'http://loo' prefix: 'k'.
+
+
+      writer writeEndElement.
+
+	assert: [output contentsWritten = '<foo k:xmlns="http://loo" k:fId1="one" k:fId2="two" />'].
+)
+
+testSingleAttributesNestedElementGeneration = (
+      |writer output|
+      output:: CharacterReadWriteStream on:  (String new: 5).
+      writer:: getTestingWriter: output .
+      writer writeStartElement: 'foo'.
+      writer writeAttribute: 'fId1' value: 'one'.
+      writer writeAttribute: 'fId2' value: 'two'.
+      writer writeStartElement: 'goo'.
+      writer writeEndElement.
+      writer writeEndElement.
+
+	assert: [output contentsWritten = '<foo fId1="one" fId2="two"><goo /></foo>'].
+)
+
+testSingleElementGeneration = (
+      |writer output|
+      output:: CharacterReadWriteStream on:  (String new: 5).
+      writer:: getTestingWriter: output .
+      writer writeStartElement: 'foo'.
+      writer writeEndElement.
+
+	assert: [output contentsWritten = '<foo />'].
+)
+
+testSingleElementGenerationWithNamespace = (
+      |writer output|
+      output:: CharacterReadWriteStream on:  (String new: 5).
+      writer:: getTestingWriter: output .
+      writer writeStartElement: 'foo' namespace: 'http://goo'.
+      writer writeEndElement.
+
+	assert: [output contentsWritten = '<foo xmlns="http://goo" />'].
+)
+
+testTextElementGeneration = (
+      |writer output|
+      output:: CharacterReadWriteStream on:  (String new: 5).
+      writer:: getTestingWriter: output .
+      writer writeStartElement: 'foo'.
+      writer writeAttribute: 'fId1' value: 'one'.
+      writer writeAttribute: 'fId2' value: 'two'.
+
+      writer writeText: 'Hola'.
+      writer writeEndElement.
+
+	assert: [output contentsWritten = '<foo fId1="one" fId2="two">Hola</foo>'].
+)
+
+)
 
 class XmlParserSectionsTestCase selector: s = TestCase selector: s (
 "Test case for the different sections of an XML Document."
