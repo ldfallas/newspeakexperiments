@@ -57,111 +57,6 @@ pushLevel = (
 
 ))
 
-class XmlNodes = (
-"Nodes for the testing ast"
-|
-|
-)
-(
-
-class Attributes = (
-"The attribute collection of a XML element."
-|
-    private attributes
-|attributes:: collections MutableArrayList new:  10.
-)
-('as yet unclassified'
-addAttribute: name namespace: ns  value:value = (
-    |tn|
-    tn::XmlNodes new.
-    addAttributeWithQName: (tn QualifiedName prefix:ns localPart: name) value: value.
-)
-
-addAttribute: name  value:value = (
-      addAttribute: name namespace: nil value: value.
-)
-
-addAttributeWithQName: qname  value:value = (
-      attributes add: {qname. value.}
-)
-
-allAttributesWithLocalName: name= (
-      |result|
-      result:: collections MutableArrayList new:  5.
-	attributes 
-	       do: [:aPair | ((aPair at: 1)  localPart = name) ifTrue: [result add: aPair]].
-	^result
-)
-
-do: blk = (
-	attributes do: blk.
-)
-
-size = (
-	^attributes size
-)
-
-withName: name = (
-	^ withName: name andNamespace:nil.
-)
-
-withName: name andNamespace: ns = (
-	|index ename|
-	index:: attributes 
-	                  findFirst: [:e | ename:: e at: 1.
-		                                 (ename localPart = name) and: [(ename namespace = ns)]].
-	^(index > 0)
-	     ifTrue: [(attributes at: index) at: 2]
-           ifFalse: [nil]
-)
-
-withName: name andPrefix: ns = (
-	|index ename|
-	index:: attributes 
-	                  findFirst: [:e | ename:: e at: 1.
-		                                 (ename localPart = name) and: [(ename prefix = ns)]].
-	^(index > 0)
-	     ifTrue: [(attributes at: index) at: 2]
-           ifFalse: [nil]
-)
-
-)
-
-class Element name: theName attributes: theAttributes childNodes: childs = (
-"Represents a Xml element."
-|
-	name ::= theName.
-      attributes ::= theAttributes.
-      childNodes ::= childs.
-|
-)
-()
-
-class TAstXmlDecl version: theVersion encoding: theEncoding standalone: isStandalone = (
-"Node for Xml Declaration"
-|
-       version = theVersion.
-       enconding = theEncoding.
-       standalone = isStandalone.
-|
-)
-()
-
-class QualifiedName prefix: thePrefix localPart: theLocalPart = (
-"Describe the class in this comment."
-|
-	prefix = thePrefix.
-	localPart = theLocalPart.
-	public namespace = nil.
-|
-)
-('as yet unclassified'
-asString = (
-	^ (prefix isNil) ifTrue: [ localPart ] ifFalse: [prefix, ':',localPart].
-)
-
-))
-
 class Entities = (
 "Containts definitions for XML entities"
 |
@@ -194,7 +89,7 @@ addCards = (
 
 )
 
-private addEntity: pair = (
+addEntity: pair = (
       |eName value| 
       eName::(pair at: 1).
       value:: (Unicode value: (pair at: 2)).
@@ -279,6 +174,111 @@ create = (
 )
 
 )
+
+class XmlNodes = (
+"Nodes for the testing ast"
+|
+|
+)
+(
+
+class Attributes = (
+"The attribute collection of a XML element."
+|
+    private attributes
+|attributes:: collections MutableArrayList new:  10.
+)
+('as yet unclassified'
+addAttribute: name namespace: ns  value:value = (
+    |tn|
+    tn::XmlNodes new.
+    addAttributeWithQName: (tn QualifiedName prefix:ns localPart: name) value: value.
+)
+
+addAttribute: name  value:value = (
+      addAttribute: name namespace: nil value: value.
+)
+
+addAttributeWithQName: qname  value:value = (
+      attributes add: {qname. value.}
+)
+
+allAttributesWithLocalName: name= (
+      |result|
+      result:: collections MutableArrayList new:  5.
+	attributes 
+	       do: [:aPair | ((aPair at: 1)  localPart = name) ifTrue: [result add: aPair]].
+	^result
+)
+
+do: blk = (
+	attributes do: blk.
+)
+
+size = (
+	^attributes size
+)
+
+withName: name = (
+	^ withName: name andNamespace:nil.
+)
+
+withName: name andNamespace: ns = (
+	|index ename|
+	index:: attributes 
+	                  findFirst: [:e | ename:: e at: 1.
+		                                 (ename localPart = name) and: [(ename namespace = ns)]].
+	^(index > 0)
+	     ifTrue: [(attributes at: index) at: 2]
+           ifFalse: [nil]
+)
+
+withName: name andPrefix: ns = (
+	|index ename|
+	index:: attributes 
+	                  findFirst: [:e | ename:: e at: 1.
+		                                 (ename localPart = name) and: [(ename prefix = ns)]].
+	^(index > 0)
+	     ifTrue: [(attributes at: index) at: 2]
+           ifFalse: [nil]
+)
+
+)
+
+class TAstXmlDecl version: theVersion encoding: theEncoding standalone: isStandalone = (
+"Node for Xml Declaration"
+|
+       version = theVersion.
+       enconding = theEncoding.
+       standalone = isStandalone.
+|
+)
+()
+
+class Element name: theName attributes: theAttributes childNodes: childs = (
+"Represents a Xml element."
+|
+	name ::= theName.
+      attributes ::= theAttributes.
+      childNodes ::= childs.
+|
+)
+()
+
+class QualifiedName prefix: thePrefix localPart: theLocalPart = (
+"Describe the class in this comment."
+|
+	prefix = thePrefix.
+	localPart = theLocalPart.
+	public namespace = nil.
+|
+)
+('as yet unclassified'
+asString = (
+	^ (prefix isNil) ifTrue: [ localPart ] ifFalse: [prefix, ':',localPart].
+)
+
+))
 
 class XmlParsing withParsingLib: parserLibrary = (
 "Support for XML parsing"
@@ -461,23 +461,6 @@ addCompactingStrings: element to: collection  = (
 
 )
 
-class CharExceptForParser = PredicateTokenParser (
-"A parser to accept any character except for the specified."
-|
-
-|
-)
-('as yet unclassified'
-for: aChar = (
-	^self accept: [:c | c ~= aChar] errorMsg: ''
-)
-
-forCharIn: chars <Array> = (
-	^self accept: [:c |  (chars includes: c) not] errorMsg: ''
-)
-
-)
-
 class ParserWithXmlContext = CombinatorialParser (
 "Parser that adds an Xml parsing context to the process."
 |
@@ -502,6 +485,23 @@ forParser: ctxt = (
 	r:: ParserWithXmlContext new.
 	r theInnerParser: ctxt. 
 	^ r.
+)
+
+)
+
+class CharExceptForParser = PredicateTokenParser (
+"A parser to accept any character except for the specified."
+|
+
+|
+)
+('as yet unclassified'
+for: aChar = (
+	^self accept: [:c | c ~= aChar] errorMsg: ''
+)
+
+forCharIn: chars <Array> = (
+	^self accept: [:c |  (chars includes: c) not] errorMsg: ''
 )
 
 )
@@ -763,14 +763,14 @@ getPrefixFor: ns  = (
           ifFalse: [nil].
 )
 
-private innerWriteStartTag: name = (
+innerWriteStartTag: name = (
       pendingStateAction.
 	output nextPutAll: ('<' , name).
       lastStartTags push: name.
       state:: #start.
 )
 
-private pendingStateAction = (
+pendingStateAction = (
 
 	(state = #start or: [state = #attributeWritten]) ifTrue: [output put: $>].
 )
@@ -799,7 +799,15 @@ writeAttribute: name value: value  namespace: ns prefix: prefix= (
       writeAttribute: attributeName value: value.
 )
 
-private writeDeclarationOfPrefixIfNeeded: prefix for: ns = (
+writeCdata: text = (
+   pendingStateAction .
+   output nextPutAll: '<![CDATA['.
+   output nextPutAll: text.
+   output nextPutAll: ']]>'.
+   state:: #textWritten.
+)
+
+writeDeclarationOfPrefixIfNeeded: prefix for: ns = (
 	|currentValueForPrefix|
      currentValueForPrefix:: getNamespaceFor: prefix.
       (ns ~= currentValueForPrefix) 
@@ -861,6 +869,113 @@ writeTextEscapingXmlChars: text = (
       ]
 )
 
+)
+
+class XmlWriterWithBlocks on: output= XmlWriter on: output (
+"An XmlWriter that supports a block syntax."
+|
+|
+)
+('as yet unclassified'
+cdata: t = (
+	writeCdata: t.
+)
+
+element: name = (
+	writeStartElement: name.
+	writeEndElement.
+)
+
+element: name attributes: atts = (
+	writeStartElement: name.
+	writeAttributeTuples: atts.
+	writeEndElement.
+)
+
+element: name attributes: atts with: block= (
+	writeStartElement: name.
+	writeAttributeTuples: atts.
+	block value.
+	writeEndElement.
+)
+
+element: name namespace: ns= (
+	writeStartElement: name namespace: ns.
+	writeEndElement.
+)
+
+element: name namespace: ns attributes: atts= (
+	writeStartElement: name namespace: ns.
+      writeAttributeTuples: atts.
+	writeEndElement.
+)
+
+element: name namespace: ns attributes: atts with: block= (
+	writeStartElement: name namespace: ns.
+      writeAttributeTuples: atts.
+      block value.
+	writeEndElement.
+)
+
+element: name namespace: ns prefix: prefix= (
+	writeStartElement: name namespace: ns prefix: prefix.
+	writeEndElement.
+)
+
+element: name namespace: ns prefix: prefix attributes: atts= (
+	writeStartElement: name namespace: ns prefix: prefix.
+	writeAttributeTuples: atts.
+	writeEndElement.
+)
+
+element: name namespace: ns prefix: prefix attributes: atts with: block = (
+	writeStartElement: name namespace: ns prefix: prefix.
+	writeAttributeTuples: atts.
+	block value.
+	writeEndElement.
+)
+
+element: name namespace: ns prefix: prefix with: block = (
+	writeStartElement: name namespace: ns prefix: prefix.
+	block value.
+	writeEndElement.
+)
+
+element: name namespace: ns with: block = (
+	writeStartElement: name namespace: ns.
+	block value.
+	writeEndElement.
+)
+
+element: name with: block= (
+	writeStartElement: name.
+	block value.
+	writeEndElement.
+)
+
+text: t = (
+	writeText: t.
+)
+
+private writeAttributeTuples: tuples = (
+      |name value|
+	tuples do: [:t | (t size = 2)
+		                       ifTrue: [
+			                               name:: t at: 1.
+			                               value:: t at: 2.
+			                               name isString
+			                                   ifTrue: [ writeAttribute: name value: value]
+			                                   ifFalse: [
+                                                           (name size = 3)
+                                                                ifTrue: [ writeAttribute: (name at: 1)
+	                                                                              value: value
+	                                                                              namespace: (name at: 2)
+	                                                                              prefix: (name at: 3)]
+                                                                ifFalse: [error: 'Invalid attribute name tuple']].
+			                          ]
+		                       ifFalse: [error: 'Invalid attribute tuple'.]]
+)
+
 ))'as yet unclassified'
 basicParser = (
 	|parsingLib xmlparsing|
@@ -872,7 +987,7 @@ basicParser = (
 basicWriter: output = (
 	|writerLib|
       writerLib::  XmlGeneration usingPlatform: platform.
-      ^ writerLib XmlWriter on: output.
+      ^ writerLib XmlWriterWithBlocks on: output.
 )
 
 entities = (

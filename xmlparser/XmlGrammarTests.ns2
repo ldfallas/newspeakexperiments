@@ -77,7 +77,72 @@ testBasicNestedElementGeneration = (
 )
 
 testBasicNestedElementGenerationWithNamespace = (
-      |writer output ns p|
+      |writer output ns|
+      output:: CharacterReadWriteStream on:  (String new: 5).
+      writer:: getTestingWriter: output .
+      ns:: 'http://goo'.
+      writer writeStartElement: 'foo' namespace: ns.
+          writer writeStartElement: 'foo1' namespace: ns.
+          writer writeEndElement.
+          writer writeStartElement: 'foo2' namespace: ns.
+          writer writeEndElement.
+          writer writeStartElement: 'foo3' namespace: 'http://zoo'.
+              writer writeStartElement: 'foo4' namespace: ns.
+              writer writeEndElement.
+          writer writeEndElement.
+
+      writer writeEndElement.
+
+	assert: [output contentsWritten = '<foo xmlns="http://goo"><foo1 /><foo2 /><foo3 xmlns="http://zoo"><foo4 xmlns="http://goo" /></foo3></foo>'].       
+)
+
+testBasicNestedElementGenerationWithNamespaceAndPrefix = (
+     |w output ns p|
+      output:: CharacterReadWriteStream on:  (String new: 5).
+      w:: getTestingWriter: output .
+      ns:: 'http://goo'.
+      p:: 'g'. 
+      w element: 'foo' 
+         namespace: ns 
+         prefix: 'g'
+         attributes: { {'id'. 'x1'.}. {{'xoo'. ns. 'g'}. 'a'.}}
+         with: [
+          w element: 'foo1' namespace: ns.
+          w element: 'foo2' namespace: ns.
+
+          w element: 'foo3' namespace: 'http://zoo'
+             with: [
+              w element: 'foo4' namespace: ns.
+          ].
+      ].
+
+	assert: [output contentsWritten = '<g:foo g:xmlns="http://goo" id="x1" g:xoo="a"><g:foo1 /><g:foo2 /><foo3 xmlns="http://zoo"><g:foo4 /></foo3></g:foo>'].
+)
+
+testBlockBasedNestedElementGeneration = (
+      |w output|
+      output:: CharacterReadWriteStream on:  (String new: 5).
+      w:: getTestingWriter: output .
+      w element: 'foo' 
+         attributes: { {'id'. 'goo'.} }
+         with: [
+          w element: 'foo1'.
+          w element: 'foo2'.
+          w element: 'foo3'
+              with: [
+              w element: 'foo4'
+                  with: [
+	              w text: 'Hello'.
+	          ].
+              w cdata: '<loo>'.
+              ].
+         ].
+
+	assert: [output contentsWritten = '<foo id="goo"><foo1 /><foo2 /><foo3><foo4>Hello</foo4><![CDATA[<loo>]]></foo3></foo>'].
+)
+
+testBlockedNestedElementGenerationWithNamespaceAndPrefix = (
+     |writer output ns p|
       output:: CharacterReadWriteStream on:  (String new: 5).
       writer:: getTestingWriter: output .
       ns:: 'http://goo'.
@@ -97,24 +162,18 @@ testBasicNestedElementGenerationWithNamespace = (
 	assert: [output contentsWritten = '<g:foo g:xmlns="http://goo"><g:foo1 /><g:foo2 /><foo3 xmlns="http://zoo"><g:foo4 /></foo3></g:foo>'].
 )
 
-testBasicNestedElementGenerationWithNamespaceAndPrefix = (
-      |writer output ns|
+testCdataGeneration = (
+      |writer output|
       output:: CharacterReadWriteStream on:  (String new: 5).
       writer:: getTestingWriter: output .
-      ns:: 'http://goo'.
-      writer writeStartElement: 'foo' namespace: ns.
-          writer writeStartElement: 'foo1' namespace: ns.
-          writer writeEndElement.
-          writer writeStartElement: 'foo2' namespace: ns.
-          writer writeEndElement.
-          writer writeStartElement: 'foo3' namespace: 'http://zoo'.
-              writer writeStartElement: 'foo4' namespace: ns.
-              writer writeEndElement.
-          writer writeEndElement.
+      writer writeStartElement: 'foo'.
+      writer writeAttribute: 'fId1' value: 'one'.
+      writer writeAttribute: 'fId2' value: 'two'.
 
+      writer writeCdata: '<agoo>'.
       writer writeEndElement.
 
-	assert: [output contentsWritten = '<foo xmlns="http://goo"><foo1 /><foo2 /><foo3 xmlns="http://zoo"><foo4 xmlns="http://goo" /></foo3></foo>'].
+	assert: [output contentsWritten = '<foo fId1="one" fId2="two"><![CDATA[<agoo>]]></foo>'].
 )
 
 testEscapedTextElementGeneration = (
